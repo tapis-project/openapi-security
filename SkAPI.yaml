@@ -140,9 +140,11 @@ paths:
       tags:
         - Roles
       description: |
-        Add a child role to another role using a request body.  If the child already exists, then the request has no effect and the change count returned is zero. Otherwise, the child is added and the change count is one.
+        Add a child role to another role using a request body. If the child already exists, then the request has no
+        effect and the change count returned is zero. Otherwise, the child is added and the change count is one.
 
-        The user@tenant identity specified in JWT is authorized to make this request only if that user is an administrator or if the user owns both the parent and child roles.
+        The user@tenant identity specified in JWT is authorized to make this request only if that user is an
+        administrator or if the user owns both the parent and child roles.
       operationId: addChildRole
       security:
         - TapisJWT: []
@@ -193,20 +195,28 @@ paths:
     post:
       tags:
         - Roles
-      description: |-
-        Add a permission to an existing role using a request body.  If the permission already exists, then the request has no effect and the change count returned is zero. Otherwise, the permission is added and the change count is one.
+      description: |
+        Add a permission to an existing role using a request body.  If the permission already exists, then the request has
+        no effect and the change count returned is zero. Otherwise, the permission is added and the change count is one.
 
-        Permissions are case-sensitive strings that follow the format defined by Apache Shiro (https://shiro.apache.org/permissions.html).  This format defines any number of colon-separated (:) parts, with the possible use of asterisks (*) as wildcards and commas (,) as aggregators.  Here are two example permission strings:
+        Permissions are case-sensitive strings that follow the format defined by Apache Shiro
+        (https://shiro.apache.org/permissions.html).  This format defines any number of colon-separated (:) parts, with
+        the possible use of asterisks (*) as wildcards and commas (,) as aggregators.  Here are two example permission strings:
 
             system:MyTenant:read,write:system1
             system:MyTenant:create,read,write,delete:*
 
-        See the Shiro documentation for further details.  Note that the three reserved characters, [: * ,], cannot appear in the text of any part.  It's the application's responsibility to escape those characters in a manner that is safe in the application's domain.
+        See the Shiro documentation for further details.  Note that the three reserved characters, [: * ,], cannot
+        appear in the text of any part.  It's the application's responsibility to escape those characters in a manner
+        that is safe in the application's domain.
 
         ### Extended Permissions
-        Tapis extends Shiro permission checking with *path semantics*.  Path semantics allows the last part of pre-configured permissions to be treated as hierarchical path names, such as the paths used in POSIX file systems.  Currently, only permissions that start with *files:* have their last (5th) component configured with path semantics.
+        Tapis extends Shiro permission checking with *path semantics*.  Path semantics allows the last part of
+        pre-configured permissions to be treated as hierarchical path names, such as the paths used in POSIX file systems.
+        Currently, only permissions that start with *files:* have their last (5th) component configured with path semantics.
 
-        Path semantics treat the extended permission part as the root of the subtree to which the permission is applied recursively.  Grantees assigned the permission will have the permission on the path itself and on all its children.
+        Path semantics treat the extended permission part as the root of the subtree to which the permission is applied
+        recursively. Grantees assigned the permission will have the permission on the path itself and on all its children.
 
         As an example, consider a role that's assigned the following permission:
 
@@ -221,13 +231,24 @@ paths:
 
         Those users, however, will not have access to /home.
 
-        When an extended permission part ends with a slash, such as /home/bud/, then that part is interpreted as a directory or, more generally, some type of container.  In such cases, the permission applies to the children of the path and to the path as written with a slash.  For instance, for the file permission path /home/bud/, the permission allows access to /home/bud/ and /home/bud/myfile, but not to /home/bud.
+        When an extended permission part ends with a slash, such as /home/bud/, then that part is interpreted as a
+        directory or, more generally, some type of container.  In such cases, the permission applies to the children of
+        the path and to the path as written with a slash.  For instance, for the file permission path /home/bud/, the
+        permission allows access to /home/bud/ and /home/bud/myfile, but not to /home/bud.
 
-        When an extended permission part does not end with a slash, such as /home/bud, then the permission applies to the children of the path and to the path written with or without a trailing slash.  For instance, for the file permission path /home/bud, the permission allows access to /home/bud, /home/bud/ and /home/bud/myfile.
+        When an extended permission part does not end with a slash, such as /home/bud, then the permission applies to
+        the children of the path and to the path written with or without a trailing slash.  For instance, for the file
+        permission path /home/bud, the permission allows access to /home/bud, /home/bud/ and /home/bud/myfile.
 
-        In the previous examples, we assumed /home/bud was a directory.  If /home/bud is a file (or more generally a leaf), then specifying the permission path /home/bud/ will not work as intended.  Permissions with paths that have trailing slashes should only be used for directories, and they require a trailing slash whenever refering to the root directory.  Permissions that don't have a trailing slash can represent directories or files, and thus are more general.
+        In the previous examples, we assumed /home/bud was a directory.  If /home/bud is a file (or more generally a leaf),
+        then specifying the permission path /home/bud/ will not work as intended.  Permissions with paths that have
+        trailing slashes should only be used for directories, and they require a trailing slash whenever refering to the
+        root directory. Permissions that don't have a trailing slash can represent directories or files, and thus are more general.
 
-        Extended permission checking avoids *false capture*.  Whether a path has a trailing slash or not, permission checking will not capture similarly named sibling paths. For example, using the file permission path /home/bud, grantees are allowed access to /home/bud and all its children (if it's a directory), but not to the file /home/buddy.txt nor the directory /home/bud2.
+        Extended permission checking avoids *false capture*.  Whether a path has a trailing slash or not, permission
+        checking will not capture similarly named sibling paths. For example, using the file permission path /home/bud,
+        grantees are allowed access to /home/bud and all its children (if it's a directory), but not to the file
+        /home/buddy.txt nor the directory /home/bud2.
 
         This request is authorized only if the authenticated user is either the role owner or an administrator.
       operationId: addRolePermission
@@ -280,10 +301,11 @@ paths:
     get:
       tags:
         - Roles
-      description: |-
+      description: |
         Get the names of all roles in the tenant in alphabetic order.  Future enhancements will include search filtering.
 
-        A valid tenant must be specified as a query parameter.  This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
+        A valid tenant must be specified as a query parameter.  This request is authorized if the requestor is a user
+        that has access to the specified tenant or if the requestor is a service.
       operationId: getRoleNames
       security:
         - TapisJWT: []
@@ -325,10 +347,13 @@ paths:
     post:
       tags:
         - Roles
-      description: |-
-        Create a role using a request body.  Role names are case sensitive, alpha-numeric strings that can also contain underscores.  Role names must start with an alphbetic character and can be no more than 58 characters in length.  The desciption can be no more than 2048 characters long.  If the role already exists, this request has no effect.
+      description: |
+        Create a role using a request body.  Role names are case sensitive, alpha-numeric strings that can also contain
+        underscores.  Role names must start with an alphbetic character and can be no more than 58 characters in length.
+        The desciption can be no more than 2048 characters long.  If the role already exists, this request has no effect.
 
-        For the request to be authorized, the requestor must be either an administrator or a service allowed to perform updates in the new role's tenant.
+        For the request to be authorized, the requestor must be either an administrator or a service allowed to perform
+        updates in the new role's tenant.
       operationId: createRole
       security:
         - TapisJWT: []
@@ -379,7 +404,9 @@ paths:
     get:
       tags:
         - Roles
-      description: Get the named role's definition.  A valid tenant must be specified as a query parameter.  This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
+      description: |
+        Get the named role's definition. A valid tenant must be specified as a query parameter. This request is
+        authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: getRoleByName
       security:
         - TapisJWT: []
@@ -432,7 +459,7 @@ paths:
     delete:
       tags:
         - Roles
-      description: |-
+      description: |
         Delete the named role. A valid tenant and user must be specified as query parameters.
 
         This request is authorized only if the authenticated user is either the role owner or an administrator.
@@ -483,10 +510,12 @@ paths:
     get:
       tags:
         - Roles
-      description: |+
-        Get a user's default role. The default role is implicitly created by the system when needed if it doesn't already exist. No authorization required.
+      description: |
+        Get a user's default role. The default role is implicitly created by the system when needed if it doesn't 
+        already exist. No authorization required.
 
-        A user's default role is constructed by prepending '$$' to the user's name.  This implies the maximum length of a user name is 58 since role names are limited to 60 characters.
+        A user's default role is constructed by prepending '$$' to the user's name. This implies the maximum length of a
+        user name is 58 since role names are limited to 60 characters.
 
       operationId: getDefaultUserRole
       security:
@@ -531,10 +560,13 @@ paths:
     get:
       tags:
         - Roles
-      description: |-
-        Get the named role's permissions.  By default, all permissions assigned to the role, whether directly and transitively through child roles, are returned.  Set the immediate query parameter to only retrieve permissions directly assigned to the role.  A valid tenant must be specified.
+      description: |
+        Get the named role's permissions. By default, all permissions assigned to the role, whether directly and
+        transitively through child roles, are returned.  Set the immediate query parameter to only retrieve permissions
+        directly assigned to the role.  A valid tenant must be specified.
 
-        This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
+        This request is authorized if the requestor is a user that has access to the specified tenant or if the
+        requestor is a service.
       operationId: getRolePermissions
       security:
         - TapisJWT: []
@@ -593,7 +625,7 @@ paths:
     post:
       tags:
         - Roles
-      description: |-
+      description: |
         This read-only endpoint previews the transformations that would take place if the same input was used on a replacePathPrefix POST call. This call is also implemented as a POST so that the same input as used on replacePathPrefix can be used here, but this call changes nothing.
 
         This endpoint can be used to get an accounting of existing system/path combinations that match the input specification. Such information is useful when trying to duplicate a set of permissions. For example, one may want to copy a file subtree to another location and assign the same permissions to the new subtree as currently exist on the original subtree. One could use  this call to calculate the users that should be granted permission on the new subtree.
@@ -1124,16 +1156,26 @@ paths:
     get:
       tags:
         - Sharing
-      description: |-
-        Get a filtered list of shared resources. Query parameters are used to restrict the returned shares. The *grantor*, *grantee*, *tenant*, *resourceType*, *resourceId1*, *resourceId2*, *privilege*, *createdBy* and *createdByTenant* parameters are used to match values in shared resource objects. Other query parameters are used to control how matching is performed.  The *tenant* parameter is required.
+      description: |
+        Get a filtered list of shared resources. Query parameters are used to restrict the returned shares.
+        The *grantor*, *grantee*, *tenant*, *resourceType*, *resourceId1*, *resourceId2*, *privilege*, *createdBy* and
+        *createdByTenant* parameters are used to match values in shared resource objects. Other query parameters are
+        used to control how matching is performed.  The *tenant* parameter is required.
 
-        If resourceId1 or resourceId2 end with a percent sign (%) wildcard then the search results will include all shares with IDs that begin with the same prefix string.  Percent signs embedded elsewhere in the string are *not* recognized as wildcards.
+        If resourceId1 or resourceId2 end with a percent sign (%) wildcard then the search results will include all
+        shares with IDs that begin with the same prefix string.  Percent signs embedded elsewhere in the string are
+        *not* recognized as wildcards.
 
-        Specifying the *id* parameter causes the other filtering parameters to be ignored. The result list will contain at most one entry.
+        Specifying the *id* parameter causes the other filtering parameters to be ignored. The result list will contain
+        at most one entry.
 
-        The *includePublicGrantees* flag, true by default, controls whether resources granted to **~public** and **~public_no_authn** are also considered for inclusion in the result list.
+        The *includePublicGrantees* flag, true by default, controls whether resources granted to **~public** and
+        **~public_no_authn** are also considered for inclusion in the result list.
 
-        The *requireNullId2* flag, true by default, applies only when no *resourceId2* value is provided. When set, only shared resources that do not specify a *resourceId2* value are considered for inclusion in the result list. By setting this flag to false the caller indicates a "don't care" designation on the *resourceId2* value, allowing shares with any *resourceId2* value to be considered for inclusion in the result list.
+        The *requireNullId2* flag, true by default, applies only when no *resourceId2* value is provided. When set, only
+        shared resources that do not specify a *resourceId2* value are considered for inclusion in the result list. By
+        setting this flag to false the caller indicates a "don't care" designation on the *resourceId2* value, allowing
+        shares with any *resourceId2* value to be considered for inclusion in the result list.
 
         For the request to be authorized, the requestor must be a Tapis service.
       operationId: getShares
@@ -3775,140 +3817,10 @@ components:
       description: Tapis signed JWT token authentication
       name: X-Tapis-Token
       in: header
+  schemas:
   # ------------------------------------------------------------------------------
   # --- Model objects ------------------------------------------------------------
   # ------------------------------------------------------------------------------
-  schemas:
-    RespChangeCount:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        commit:
-          type: string
-        build:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ResultMetadata'
-        result:
-          $ref: '#/components/schemas/ResultChangeCount'
-    ResultChangeCount:
-      type: object
-      properties:
-        changes:
-          type: integer
-          format: int32
-    ResultMetadata:
-      type: object
-    RespBasic:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        commit:
-          type: string
-        build:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ResultMetadata'
-        result:
-          type: object
-    RespName:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        commit:
-          type: string
-        build:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ResultMetadata'
-        result:
-          $ref: '#/components/schemas/ResultName'
-    ResultName:
-      type: object
-      properties:
-        name:
-          type: string
-    ReqAddChildRole:
-      type: object
-      properties:
-        roleTenant:
-          type: string
-        parentRoleName:
-          type: string
-        childRoleName:
-          type: string
-    ReqAddRolePermission:
-      type: object
-      properties:
-        roleTenant:
-          type: string
-        roleName:
-          type: string
-        permSpec:
-          type: string
-    RespResourceUrl:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        commit:
-          type: string
-        build:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ResultMetadata'
-        result:
-          $ref: '#/components/schemas/ResultResourceUrl'
-    ResultResourceUrl:
-      type: object
-      properties:
-        url:
-          type: string
-    ReqCreateRole:
-      type: object
-      properties:
-        roleTenant:
-          type: string
-        roleName:
-          type: string
-        description:
-          type: string
-    RespRole:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        commit:
-          type: string
-        build:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ResultMetadata'
-        result:
-          $ref: '#/components/schemas/SkRole'
     SkRole:
       type: object
       properties:
@@ -3940,49 +3852,13 @@ components:
         hasChildren:
           type: boolean
           writeOnly: true
-    RespNameArray:
+    SkShareList:
       type: object
       properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        commit:
-          type: string
-        build:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ResultMetadata'
-        result:
-          $ref: '#/components/schemas/ResultNameArray'
-    ResultNameArray:
-      type: object
-      properties:
-        names:
+        shares:
           type: array
           items:
-            type: string
-    RespPathPrefixes:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        commit:
-          type: string
-        build:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ResultMetadata'
-        result:
-          type: array
-          items:
-            $ref: '#/components/schemas/Transformation'
+            $ref: '#/components/schemas/SkShare'
     Transformation:
       type: object
       properties:
@@ -3992,6 +3868,128 @@ components:
         oldPerm:
           type: string
         newPerm:
+          type: string
+    SkProbe:
+      type: object
+      properties:
+        checkNum:
+          type: integer
+          format: int64
+    SkShare:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        tenant:
+          type: string
+        grantor:
+          type: string
+        grantee:
+          type: string
+        resourceType:
+          type: string
+        resourceId1:
+          type: string
+        resourceId2:
+          type: string
+        privilege:
+          type: string
+        created:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+        createdByTenant:
+          type: string
+    SkSecretList:
+      type: object
+      properties:
+        secretPath:
+          type: string
+        keys:
+          type: array
+          items:
+            type: string
+    SkSecret:
+      type: object
+      properties:
+        secretMap:
+          type: object
+          additionalProperties:
+            type: string
+        metadata:
+          $ref: '#/components/schemas/SkSecretMetadata'
+    SkSecretMetadata:
+      type: object
+      properties:
+        created_time:
+          type: string
+        deletion_time:
+          type: string
+        destroyed:
+          type: boolean
+        version:
+          type: integer
+          format: int32
+    SkSecretVersion:
+      type: object
+      properties:
+        version:
+          type: integer
+          format: int32
+        created_time:
+          type: string
+        deletion_time:
+          type: string
+        destroyed:
+          type: boolean
+    SkSecretVersionMetadata:
+      type: object
+      properties:
+        created_time:
+          type: string
+        current_version:
+          type: integer
+          format: int32
+        max_versions:
+          type: integer
+          format: int32
+        oldest_version:
+          type: integer
+          format: int32
+        updated_time:
+          type: string
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkSecretVersion'
+    Options:
+      type: object
+      properties:
+        cas:
+          type: integer
+          format: int32
+    # -------------------------------------------------------------------------
+    # --- Request objects -----------------------------------------------------
+    # -------------------------------------------------------------------------
+    ReqAddChildRole:
+      type: object
+      properties:
+        roleTenant:
+          type: string
+        parentRoleName:
+          type: string
+        childRoleName:
+          type: string
+    ReqAddRolePermission:
+      type: object
+      properties:
+        roleTenant:
+          type: string
+        roleName:
+          type: string
+        permSpec:
           type: string
     ReqPreviewPathPrefix:
       type: object
@@ -4075,119 +4073,15 @@ components:
           type: string
         newTenant:
           type: string
-    RespProbe:
+    ReqCreateRole:
       type: object
       properties:
-        status:
+        roleTenant:
           type: string
-        message:
+        roleName:
           type: string
-        version:
+        description:
           type: string
-        commit:
-          type: string
-        build:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ResultMetadata'
-        result:
-          $ref: '#/components/schemas/SkProbe'
-    SkProbe:
-      type: object
-      properties:
-        checkNum:
-          type: integer
-          format: int64
-    RespShare:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        commit:
-          type: string
-        build:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ResultMetadata'
-        result:
-          $ref: '#/components/schemas/SkShare'
-    SkShare:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int32
-        tenant:
-          type: string
-        grantor:
-          type: string
-        grantee:
-          type: string
-        resourceType:
-          type: string
-        resourceId1:
-          type: string
-        resourceId2:
-          type: string
-        privilege:
-          type: string
-        created:
-          type: string
-          format: date-time
-        createdBy:
-          type: string
-        createdByTenant:
-          type: string
-    RespShareList:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        commit:
-          type: string
-        build:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ResultMetadata'
-        result:
-          $ref: '#/components/schemas/SkShareList'
-    SkShareList:
-      type: object
-      properties:
-        shares:
-          type: array
-          items:
-            $ref: '#/components/schemas/SkShare'
-    RespBoolean:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        commit:
-          type: string
-        build:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ResultMetadata'
-        result:
-          $ref: '#/components/schemas/ResultBoolean'
-    ResultBoolean:
-      type: object
-      properties:
-        aBool:
-          type: boolean
     ReqShareResource:
       type: object
       properties:
@@ -4241,28 +4135,6 @@ components:
           type: string
         permSpec:
           type: string
-    RespAuthorized:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        commit:
-          type: string
-        build:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/ResultMetadata'
-        result:
-          $ref: '#/components/schemas/ResultAuthorized'
-    ResultAuthorized:
-      type: object
-      properties:
-        isAuthorized:
-          type: boolean
     ReqUserHasRole:
       type: object
       properties:
@@ -4343,7 +4215,171 @@ components:
           type: string
         roleName:
           type: string
-    RespVersions:
+    ReqVersions:
+      type: object
+      properties:
+        tenant:
+          type: string
+        user:
+          type: string
+        versions:
+          type: array
+          items:
+            type: integer
+            format: int32
+    ReqValidateServicePwd:
+      type: object
+      properties:
+        tenant:
+          type: string
+        user:
+          type: string
+        password:
+          type: string
+    ReqWriteSecret:
+      type: object
+      properties:
+        tenant:
+          type: string
+        user:
+          type: string
+        options:
+          $ref: '#/components/schemas/Options'
+        data:
+          type: object
+          additionalProperties:
+            type: string
+    # -------------------------------------------------------------------------
+    # --- Response objects ----------------------------------------------------
+    # -------------------------------------------------------------------------
+    RespChangeCount:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        commit:
+          type: string
+        build:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+        result:
+          $ref: '#/components/schemas/ResultChangeCount'
+    ResultChangeCount:
+      type: object
+      properties:
+        changes:
+          type: integer
+          format: int32
+    ResultMetadata:
+      type: object
+    RespBasic:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        commit:
+          type: string
+        build:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+        result:
+          type: object
+    RespName:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        commit:
+          type: string
+        build:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+        result:
+          $ref: '#/components/schemas/ResultName'
+    ResultName:
+      type: object
+      properties:
+        name:
+          type: string
+    RespResourceUrl:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        commit:
+          type: string
+        build:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+        result:
+          $ref: '#/components/schemas/ResultResourceUrl'
+    ResultResourceUrl:
+      type: object
+      properties:
+        url:
+          type: string
+    RespRole:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        commit:
+          type: string
+        build:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+        result:
+          $ref: '#/components/schemas/SkRole'
+    RespNameArray:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        commit:
+          type: string
+        build:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+        result:
+          $ref: '#/components/schemas/ResultNameArray'
+    ResultNameArray:
+      type: object
+      properties:
+        names:
+          type: array
+          items:
+            type: string
+    RespPathPrefixes:
       type: object
       properties:
         status:
@@ -4361,16 +4397,118 @@ components:
         result:
           type: array
           items:
-            type: integer
-            format: int32
-    ReqVersions:
+            $ref: '#/components/schemas/Transformation'
+    RespProbe:
       type: object
       properties:
-        tenant:
+        status:
           type: string
-        user:
+        message:
           type: string
-        versions:
+        version:
+          type: string
+        commit:
+          type: string
+        build:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+        result:
+          $ref: '#/components/schemas/SkProbe'
+    RespShare:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        commit:
+          type: string
+        build:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+        result:
+          $ref: '#/components/schemas/SkShare'
+    RespShareList:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        commit:
+          type: string
+        build:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+        result:
+          $ref: '#/components/schemas/SkShareList'
+    RespBoolean:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        commit:
+          type: string
+        build:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+        result:
+          $ref: '#/components/schemas/ResultBoolean'
+    ResultBoolean:
+      type: object
+      properties:
+        aBool:
+          type: boolean
+    RespAuthorized:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        commit:
+          type: string
+        build:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+        result:
+          $ref: '#/components/schemas/ResultAuthorized'
+    ResultAuthorized:
+      type: object
+      properties:
+        isAuthorized:
+          type: boolean
+    RespVersions:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        commit:
+          type: string
+        build:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+        result:
           type: array
           items:
             type: integer
@@ -4392,15 +4530,6 @@ components:
           $ref: '#/components/schemas/ResultMetadata'
         result:
           $ref: '#/components/schemas/SkSecretList'
-    SkSecretList:
-      type: object
-      properties:
-        secretPath:
-          type: string
-        keys:
-          type: array
-          items:
-            type: string
     RespSecret:
       type: object
       properties:
@@ -4418,27 +4547,6 @@ components:
           $ref: '#/components/schemas/ResultMetadata'
         result:
           $ref: '#/components/schemas/SkSecret'
-    SkSecret:
-      type: object
-      properties:
-        secretMap:
-          type: object
-          additionalProperties:
-            type: string
-        metadata:
-          $ref: '#/components/schemas/SkSecretMetadata'
-    SkSecretMetadata:
-      type: object
-      properties:
-        created_time:
-          type: string
-        deletion_time:
-          type: string
-        destroyed:
-          type: boolean
-        version:
-          type: integer
-          format: int32
     RespSecretVersionMetadata:
       type: object
       properties:
@@ -4456,47 +4564,6 @@ components:
           $ref: '#/components/schemas/ResultMetadata'
         result:
           $ref: '#/components/schemas/SkSecretVersionMetadata'
-    SkSecretVersion:
-      type: object
-      properties:
-        version:
-          type: integer
-          format: int32
-        created_time:
-          type: string
-        deletion_time:
-          type: string
-        destroyed:
-          type: boolean
-    SkSecretVersionMetadata:
-      type: object
-      properties:
-        created_time:
-          type: string
-        current_version:
-          type: integer
-          format: int32
-        max_versions:
-          type: integer
-          format: int32
-        oldest_version:
-          type: integer
-          format: int32
-        updated_time:
-          type: string
-        versions:
-          type: array
-          items:
-            $ref: '#/components/schemas/SkSecretVersion'
-    ReqValidateServicePwd:
-      type: object
-      properties:
-        tenant:
-          type: string
-        user:
-          type: string
-        password:
-          type: string
     RespSecretMeta:
       type: object
       properties:
@@ -4514,22 +4581,6 @@ components:
           $ref: '#/components/schemas/ResultMetadata'
         result:
           $ref: '#/components/schemas/SkSecretMetadata'
-    Options:
-      type: object
-      properties:
-        cas:
-          type: integer
-          format: int32
-    ReqWriteSecret:
-      type: object
-      properties:
-        tenant:
-          type: string
-        user:
-          type: string
-        options:
-          $ref: '#/components/schemas/Options'
-        data:
-          type: object
-          additionalProperties:
-            type: string
+    # -------------------------------------------------------------------------
+    # --- Enums ---------------------------------------------------------------
+    # -------------------------------------------------------------------------
