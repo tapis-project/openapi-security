@@ -1,42 +1,151 @@
-openapi: 3.0.1
+openapi: 3.0.3
 info:
   title: Tapis Security API
-  description: The Tapis Security API provides access to the Tapis Security Kernel authorization and secrets facilities.
+  description: The Tapis Security API provides for management of Security Kernel (SK) authorization and secrets resources.
+  version: '1.8.2'
+  termsOfService: "https://tapis-project.org"
   contact:
-    name: CICSupport
-    email: cicsupport@tacc.utexas.edu
+    name: "Tapis Security API - CICSupport"
+    url: "https://tapis-project.org"
+    email: "cicsupport@tacc.utexas.edu"
   license:
     name: 3-Clause BSD License
-    url: https://opensource.org/licenses/BSD-3-Clause
-  version: '0.1'
+    url: 'https://opensource.org/licenses/BSD-3-Clause'
 externalDocs:
-  description: Tapis Home
-  url: https://tacc-cloud.readthedocs.io/projects/agave/en/latest/
+  description: Tapis Project
+  url: 'https://tapis-project.org'
 servers:
-  - url: http://localhost:8080/v3
+  - url: 'http://localhost:8080/'
     description: Local test environment
     variables: {}
+  - url: 'https://dev.develop.tapis.io/'
+    description: Development environment
+    variables: {}
 tags:
-  - name: role
-    description: manage roles and permissions
-  - name: user
-    description: assign roles and permissions to users
-  - name: share
-    description: share resources among users
-  - name: vault
-    description: manage application and user secrets
-  - name: general
-    description: informational endpoints
+  - name: General
+    description: General service health and readiness of the Security Kernel (SK)
+  - name: Roles
+    description: Manage Tapis roles and permissions. Create, retrieve, update, etc.
+  - name: Users
+    description: Manage roles and permissions for users. Grant, revoke, retrieve, etc.
+  - name: Sharing
+    description: |
+      In addition to fine grained permissions support, some Tapis services also support a higher level
+      approach to granting access. This approach is known simply as *sharing*. Sharing allows a resource
+      owner to share resources with a set of users as well as share publicly with all users in a tenant.
+      Each service that supports sharing uses the Security Kernel to manage sharing information.
+      Currently the Systems, Apps and Files services incorporate sharing.
+      Please see the individual service documentation for more information.
+  - name: Vault
+    description: |
+      SK uses HashiCorp Vault as the backend database for storing and managing secrets. There is no direct
+      access to Vault for users or services. All access is through SK. SK allows secrets to be created, read,
+      versioned, deleted and destroyed by reflecting in its API the capabilities of Vault.
+
+      SK overlays Vault capabilities with its own typed secrets model. The basic idea is that SK requires users to
+      provide a secretType and secretName on most of its calls. Using this information, SK calculates the virtual
+      paths (i.e., locations) in Vault being referenced. Users do not need to understand the Vault naming scheme and
+      SK has complete control of where secrets reside inside of Vault.
+
+# ------------------------------------------------------------------------------
+# --- Paths -------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 paths:
+
+  # --- Paths for General ------------------------------------------
+  /security/healthcheck:
+    get:
+      tags:
+        - General
+      description: Lightwieght health check for liveness. No authorization required.
+      operationId: checkHealth
+      responses:
+        '200':
+          description: Message received.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespProbe'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespProbe'
+  /security/ready:
+    get:
+      tags:
+        - General
+      description: Lightwieght readiness check. No authorization required.
+      operationId: ready
+      responses:
+        '200':
+          description: Service ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespProbe'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespProbe'
+      deprecated: true
+  /security/readycheck:
+    get:
+      tags:
+        - General
+      description: Lightwieght readiness check. No authorization required.
+      operationId: readycheck
+      responses:
+        '200':
+          description: Service ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespProbe'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespProbe'
+  /security/hello:
+    get:
+      tags:
+        - General
+      description: Logged connectivity test. No authorization required.
+      operationId: sayHello
+      parameters:
+        - name: pretty
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Message received.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '500':
+          description: Server error.
+      deprecated: true
+
+  # --- Paths for Roles ------------------------------------------
   /security/role/addChild:
     post:
       tags:
-        - role
-      description: |-
+        - Roles
+      description: |
         Add a child role to another role using a request body.  If the child already exists, then the request has no effect and the change count returned is zero. Otherwise, the child is added and the change count is one.
 
         The user@tenant identity specified in JWT is authorized to make this request only if that user is an administrator or if the user owns both the parent and child roles.
       operationId: addChildRole
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -80,12 +189,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role/addPerm:
     post:
       tags:
-        - role
+        - Roles
       description: |-
         Add a permission to an existing role using a request body.  If the permission already exists, then the request has no effect and the change count returned is zero. Otherwise, the permission is added and the change count is one.
 
@@ -124,6 +231,8 @@ paths:
 
         This request is authorized only if the authenticated user is either the role owner or an administrator.
       operationId: addRolePermission
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -167,17 +276,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role:
     get:
       tags:
-        - role
+        - Roles
       description: |-
         Get the names of all roles in the tenant in alphabetic order.  Future enhancements will include search filtering.
 
         A valid tenant must be specified as a query parameter.  This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: getRoleNames
+      security:
+        - TapisJWT: []
       parameters:
         - name: tenant
           in: query
@@ -213,16 +322,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
     post:
       tags:
-        - role
+        - Roles
       description: |-
         Create a role using a request body.  Role names are case sensitive, alpha-numeric strings that can also contain underscores.  Role names must start with an alphbetic character and can be no more than 58 characters in length.  The desciption can be no more than 2048 characters long.  If the role already exists, this request has no effect.
 
         For the request to be authorized, the requestor must be either an administrator or a service allowed to perform updates in the new role's tenant.
       operationId: createRole
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -266,14 +375,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role/{roleName}:
     get:
       tags:
-        - role
+        - Roles
       description: Get the named role's definition.  A valid tenant must be specified as a query parameter.  This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: getRoleByName
+      security:
+        - TapisJWT: []
       parameters:
         - name: roleName
           in: path
@@ -320,16 +429,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
     delete:
       tags:
-        - role
+        - Roles
       description: |-
         Delete the named role. A valid tenant and user must be specified as query parameters.
 
         This request is authorized only if the authenticated user is either the role owner or an administrator.
       operationId: deleteRoleByName
+      security:
+        - TapisJWT: []
       parameters:
         - name: roleName
           in: path
@@ -370,18 +479,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role/defaultRole/{user}:
     get:
       tags:
-        - role
+        - Roles
       description: |+
         Get a user's default role. The default role is implicitly created by the system when needed if it doesn't already exist. No authorization required.
 
         A user's default role is constructed by prepending '$$' to the user's name.  This implies the maximum length of a user name is 58 since role names are limited to 60 characters.
 
       operationId: getDefaultUserRole
+      security:
+        - TapisJWT: []
       parameters:
         - name: user
           in: path
@@ -421,12 +530,14 @@ paths:
   /security/role/{roleName}/perms:
     get:
       tags:
-        - role
+        - Roles
       description: |-
         Get the named role's permissions.  By default, all permissions assigned to the role, whether directly and transitively through child roles, are returned.  Set the immediate query parameter to only retrieve permissions directly assigned to the role.  A valid tenant must be specified.
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: getRolePermissions
+      security:
+        - TapisJWT: []
       parameters:
         - name: roleName
           in: path
@@ -478,12 +589,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role/previewPathPrefix:
     post:
       tags:
-        - role
+        - Roles
       description: |-
         This read-only endpoint previews the transformations that would take place if the same input was used on a replacePathPrefix POST call. This call is also implemented as a POST so that the same input as used on replacePathPrefix can be used here, but this call changes nothing.
 
@@ -499,6 +608,8 @@ paths:
 
         A valid tenant and user must be specified in the request body.  This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: previewPathPrefix
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -542,17 +653,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role/removeChild:
     post:
       tags:
-        - role
+        - Roles
       description: |-
         Remove a child role from a parent role using a request body.  A valid tenant and user must be specified in the request body.
 
         The user@tenant identity specified in JWT is authorized to make this request only if that user is an administrator or if they own the parent role.
       operationId: removeChildRole
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -596,12 +707,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role/removePathPermFromAllRoles:
     post:
       tags:
-        - role
+        - Roles
       description: |-
         Remove an extended permission from all roles in a tenant using a request body.  The tenant and permission must be specified in the request body.
 
@@ -618,6 +727,8 @@ paths:
 
         Only the Files service is authorized to make this call.
       operationId: removePathPermissionFromAllRoles
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -655,12 +766,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role/removePermFromAllRoles:
     post:
       tags:
-        - role
+        - Roles
       description: |-
         Remove a permission from all roles in a tenant using a request body.  The tenant and permission must be specified in the request body.
 
@@ -670,6 +779,8 @@ paths:
 
         Only services are authorized to make this call.
       operationId: removePermissionFromAllRoles
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -707,17 +818,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role/removePerm:
     post:
       tags:
-        - role
+        - Roles
       description: |-
         Remove a permission from a role using a request body.  A valid role, roleTenant and permission must be specified in the request body.
 
         Only the role owner or administrators are authorized to make this call.
       operationId: removeRolePermission
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -761,12 +872,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role/replacePathPrefix:
     post:
       tags:
-        - role
+        - Roles
       description: |-
         Replace the text in a permission specification when its last component defines an *extended path attribute*.  Extended path attributes enhance the standard Shiro matching algorithm with one that treats designated components in a permission specification as a path name, such as a posix file or directory path name.  This request is useful when files or directories have been renamed or moved and their authorizations need to be adjusted.  Consider, for example, permissions that conform to the following specification:
 
@@ -788,6 +897,8 @@ paths:
 
         The path prefix replacement operation is authorized if the user@tenant in the JWT represents a tenant administrator or the Files service.
       operationId: replacePathPrefix
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -831,17 +942,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role/updateDesc/{roleName}:
     post:
       tags:
-        - role
+        - Roles
       description: |-
         Update an existing role's decription using a request body.  The size limit on a description is 2048 characters.
 
         This request is authorized if the requestor is the role owner or an administrator.
       operationId: updateRoleDescription
+      security:
+        - TapisJWT: []
       parameters:
         - name: roleName
           in: path
@@ -890,17 +1001,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role/updateName/{roleName}:
     post:
       tags:
-        - role
+        - Roles
       description: |-
         Update an existing role's name using a request body.  Role names are case sensitive, alphanumeric strings that can contain underscores but must begin with an alphabetic character.  The limit on role name is 58 characters.
 
         This request is authorized if the requestor is the role owner or an administrator.
       operationId: updateRoleName
+      security:
+        - TapisJWT: []
       parameters:
         - name: roleName
           in: path
@@ -949,17 +1060,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/role/updateOwner/{roleName}:
     post:
       tags:
-        - role
+        - Roles
       description: |-
         Update an existing role's owner using a request body. Required parameters in the payload are the *roleTenant*, which is the tenant of named role, and *newOwner*, which is the user to which role ownership is being transferred. The *newTenant* payload parameter is optional and only needed when the new owner resides in a different tenant than that of the current owner.
 
         This request is authorized if the requestor is the role owner or an administrator. If a new tenant is specified, then the requestor must also be allowed to act in the new tenant.
       operationId: updateRoleOwner
+      security:
+        - TapisJWT: []
       parameters:
         - name: roleName
           in: path
@@ -1008,92 +1119,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
-  /security/healthcheck:
-    get:
-      tags:
-        - general
-      description: Lightwieght health check for liveness. No authorization required.
-      operationId: checkHealth
-      responses:
-        '200':
-          description: Message received.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespProbe'
-        '503':
-          description: Service unavailable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespProbe'
-  /security/ready:
-    get:
-      tags:
-        - general
-      description: Lightwieght readiness check. No authorization required.
-      operationId: ready
-      responses:
-        '200':
-          description: Service ready.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespProbe'
-        '503':
-          description: Service unavailable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespProbe'
-      deprecated: true
-  /security/readycheck:
-    get:
-      tags:
-        - general
-      description: Lightwieght readiness check. No authorization required.
-      operationId: readycheck
-      responses:
-        '200':
-          description: Service ready.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespProbe'
-        '503':
-          description: Service unavailable.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespProbe'
-  /security/hello:
-    get:
-      tags:
-        - general
-      description: Logged connectivity test. No authorization required.
-      operationId: sayHello
-      parameters:
-        - name: pretty
-          in: query
-          schema:
-            type: boolean
-            default: false
-      responses:
-        '200':
-          description: Message received.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespBasic'
-        '500':
-          description: Server error.
-      deprecated: true
+  # --- Paths for Sharing ------------------------------------------
   /security/share:
     get:
       tags:
-        - share
+        - Sharing
       description: |-
         Get a filtered list of shared resources. Query parameters are used to restrict the returned shares. The *grantor*, *grantee*, *tenant*, *resourceType*, *resourceId1*, *resourceId2*, *privilege*, *createdBy* and *createdByTenant* parameters are used to match values in shared resource objects. Other query parameters are used to control how matching is performed.  The *tenant* parameter is required.
 
@@ -1107,6 +1137,8 @@ paths:
 
         For the request to be authorized, the requestor must be a Tapis service.
       operationId: getShares
+      security:
+        - TapisJWT: []
       parameters:
         - name: grantor
           in: query
@@ -1199,11 +1231,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
     post:
       tags:
-        - share
+        - Sharing
       description: |-
         Share a Tapis resource using a request body.  Shared resources allow services to indicate that other services should relax their Tapis authorization checking in certain, well-defined contexts.
 
@@ -1221,6 +1251,8 @@ paths:
 
         If the share already exists, then this call has no effect. For the request to be authorized, the requestor must be a Tapis service.
       operationId: shareResource
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -1264,11 +1296,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
     delete:
       tags:
-        - share
+        - Sharing
       description: |-
         Delete a single shared resource by unique attribute selection. The *grantor*, *grantee*, *tenant*, *resourceType*, *resourceId1* and *privilege* parameters are mandatory; *resourceId2* is optional and assumed to be NULL if not provided.
 
@@ -1278,6 +1308,8 @@ paths:
 
         For the request to be authorized, the requestor must be the Tapis service that originally granted the share.
       operationId: deleteShare
+      security:
+        - TapisJWT: []
       parameters:
         - name: grantor
           in: query
@@ -1344,17 +1376,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/share/{id}:
     get:
       tags:
-        - share
+        - Sharing
       description: |-
         Get a shared resource by ID. The shared resource is deleted only if it's in the tenant specified in the required *tenant* query parameter.
 
         For the request to be authorized, the requestor must be a Tapis service.
       operationId: getShare
+      security:
+        - TapisJWT: []
       parameters:
         - name: id
           in: path
@@ -1403,11 +1435,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
     delete:
       tags:
-        - share
+        - Sharing
       description: |-
         Delete a shared resource by ID. The shared resource is deleted only if it's in the tenant specified in the required *tenant* query parameter. The calling service must also be the same as the orginal service that created the share.
 
@@ -1415,6 +1445,8 @@ paths:
 
         For the request to be authorized, the requestor must be the Tapis service that originally granted the share.
       operationId: deleteShareById
+      security:
+        - TapisJWT: []
       parameters:
         - name: id
           in: path
@@ -1457,12 +1489,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/share/hasPrivilege:
     get:
       tags:
-        - share
+        - Sharing
       description: |-
         Determine if a user has been granted a specific privilege on a specific resource. The *grantee*, *tenant*, *resourceType*, *resourceId1* and *privilege* parameters are mandatory; *resourceId2* is optional and assumed to be NULL if not provided. Privilege matching is performed for the grantee and tenant specified in the query parameters.
 
@@ -1474,6 +1504,8 @@ paths:
 
         For the request to be authorized, the requestor must be a Tapis service.
       operationId: hasPrivilege
+      security:
+        - TapisJWT: []
       parameters:
         - name: grantee
           in: query
@@ -1545,17 +1577,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
+  # --- Paths for Users ------------------------------------------
   /security/user/admins/{tenant}:
     get:
       tags:
-        - user
+        - Users
       description: |-
         Get all users assigned the tenant administrator role ($!tenant_admin).
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: getAdmins
+      security:
+        - TapisJWT: []
       parameters:
         - name: tenant
           in: path
@@ -1598,17 +1631,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/defaultRole/{user}:
     get:
       tags:
-        - user
+        - Users
       description: |-
         Get a user's default role. The default role is implicitly created by the system when needed if it doesn't already exist. No authorization required.
 
         A user's default role is constructed by prepending '$$' to the user's name.  This implies the maximum length of a user name is 58 since role names are limited to 60 characters.
       operationId: getDefaultUserRole_1
+      security:
+        - TapisJWT: []
       parameters:
         - name: user
           in: path
@@ -1648,12 +1681,14 @@ paths:
   /security/user:
     get:
       tags:
-        - user
+        - Users
       description: |-
         Get the names of all users in the tenant that have been granted a role or permission.
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: getUserNames
+      security:
+        - TapisJWT: []
       parameters:
         - name: tenant
           in: query
@@ -1689,12 +1724,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/perms/{user}:
     get:
       tags:
-        - user
+        - Users
       description: |-
         Get the permissions assigned to a user in a tenant, including those assigned transively.  The result list can be optionally filtered by the one or both of the query parameters: implies and impliedBy.
 
@@ -1727,6 +1760,8 @@ paths:
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: getUserPerms
+      security:
+        - TapisJWT: []
       parameters:
         - name: user
           in: path
@@ -1777,17 +1812,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/roles/{user}:
     get:
       tags:
-        - user
+        - Users
       description: |-
         Get the roles assigned to a user in the specified tenant, including those assigned transively.
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: getUserRoles
+      security:
+        - TapisJWT: []
       parameters:
         - name: user
           in: path
@@ -1828,12 +1863,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/withPermission/{permSpec}:
     get:
       tags:
-        - user
+        - Users
       description: |-
         Get all users in a tenant assigned a permission.  The permSpec parameter is a permission specification that uses colons as separators, the asterisk as a wildcard character and commas to define lists.  Here are examples of permission specifications:
 
@@ -1849,6 +1882,8 @@ paths:
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: getUsersWithPermission
+      security:
+        - TapisJWT: []
       parameters:
         - name: permSpec
           in: path
@@ -1889,17 +1924,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/withRole/{roleName}:
     get:
       tags:
-        - user
+        - Users
       description: |-
         Get all users assigned a role.  The role must exist in the tenant.
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: getUsersWithRole
+      security:
+        - TapisJWT: []
       parameters:
         - name: roleName
           in: path
@@ -1946,14 +1981,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/grantAdminRole:
     post:
       tags:
-        - user
+        - Users
       description: Grant a user the tenant administrator role.  A valid tenant and user must be specified in the request body.  The user specified in the JWT must be an administrator in the tenant specified in the request body.
       operationId: grantAdminRole
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -1997,17 +2032,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/grantRole:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Grant a user the specified role.  A valid tenant and user must be specified in the request body.
 
         This request is authorized only if the requestor is the role owner or an administrator.  The user and the role must be in the same tenant.
       operationId: grantRole
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2051,17 +2086,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/grantRoleWithPerm:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Grant a user the specified role containing the specified permission.  This compound request first adds the permission to the role if it is not already a member of the role and then assigns the role to the user.  The change count returned can range from zero to two depending on how many insertions were actually required.
 
         Only the role owner or an administrator is authorized to make this request.  The user and the role must be in the same tenant.
       operationId: grantRoleWithPermission
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2105,12 +2140,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/grantUserPermission:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Grant a user the specified permission by assigning that permission to to the user's default role.  If the user's default role does not exist,this request will create that role and grant it to the user before assigning the permission to the role.
 
@@ -2120,6 +2153,8 @@ paths:
 
         The caller must be an administrator or service allowed to perform updates in the user's tenant.
       operationId: grantUserPermission
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2157,17 +2192,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/hasRole:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Check whether a user in a tenant has been assigned the specified role, either directly or transitively.
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: hasRole
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2205,17 +2240,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/hasRoleAll:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Check whether a user in a tenant has been assigned all of the roles specified in the request body.
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: hasRoleAll
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2253,17 +2288,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/hasRoleAny:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Check whether a user in a tenant has been assigned any of the roles specified in the request body.
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: hasRoleAny
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2301,17 +2336,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/isAdmin:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Check whether a user in a tenant has been assigned the tenant administrator role, either directly or transitively.
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: isAdmin
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2349,17 +2384,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/isPermitted:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Check whether specified permission matches a permission assigned to the user, either directly or transitively.
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: isPermitted
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2397,17 +2432,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/isPermittedAll:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Check whether a user's permissions satisfy all of the permission specifications contained in the request body.
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: isPermittedAll
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2445,17 +2480,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/isPermittedAny:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Check whether a user's permissions satisfy any of the permission specifications contained in the request body.
 
         This request is authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
       operationId: isPermittedAny
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2493,17 +2528,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/revokeAdminRole:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Revoke the previously granted tenant administrator role from a user. No action is taken if the user is not currently assigned the role (the request is idempotent).  The request will not be honored if revoking the role would leave the tenant with no administrator.
 
         The user specified in the JWT must themselves be an administrator and a valid tenant and user must be specified in the request body.
       operationId: revokeAdminRole
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2541,12 +2576,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/revokeUserPermission:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Revoke the specified permission from the user's default role. A user's default role is constructed by prepending '$$' to the user's name. Default roles are created on demand. If the role does not exist when this method is called no error is reported and no changes occur.
 
@@ -2554,6 +2587,8 @@ paths:
 
         A valid tenant and user must be specified in the request body.  The caller must be an administrator, a service or the user themselves.
       operationId: revokeUserPermission
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2591,17 +2626,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/user/revokeUserRole:
     post:
       tags:
-        - user
+        - Users
       description: |-
         Revoke a previously granted role from a user. No action is taken if the user is not currently assigned the role. This request is idempotent.
 
         This request is authorized only if the requestor is the role owner or an administrator.
       operationId: revokeUserRole
+      security:
+        - TapisJWT: []
       parameters:
         - name: pretty
           in: query
@@ -2639,12 +2674,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/vault/secret/delete/{secretType}/{secretName}:
     post:
       tags:
-        - vault
+        - Vault
       description: |-
         Soft delete one or more versions of a secret. Each version can be deleted individually or as part of a group specified in the input array. Deletion can be reversed using the *secret/undelete/{secretName}* endpoint, which make this a _soft_ deletion operation.
 
@@ -2685,6 +2718,8 @@ paths:
         - user: any user
         - service: any service
       operationId: deleteSecret
+      security:
+        - TapisJWT: []
       parameters:
         - name: secretType
           in: path
@@ -2769,12 +2804,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/vault/secret/destroy/{secretType}/{secretName}:
     post:
       tags:
-        - vault
+        - Vault
       description: |-
         Destroy one or more versions of a secret. Destroy implements a hard delete which delete that cannot be undone. It does not, however, remove any metadata associated with the secret.
 
@@ -2815,6 +2848,8 @@ paths:
         - user: any user
         - service: any service
       operationId: destroySecret
+      security:
+        - TapisJWT: []
       parameters:
         - name: secretType
           in: path
@@ -2899,12 +2934,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/vault/secret/destroy/meta/{secretType}/{secretName}:
     delete:
       tags:
-        - vault
+        - Vault
       description: |-
         Erase all traces of a secret: its key, all versions of its value and all its metadata. Specifying a folder erases all secrets in that folder.
 
@@ -2939,6 +2972,8 @@ paths:
         - user: any user
         - service: any service
       operationId: destroySecretMeta
+      security:
+        - TapisJWT: []
       parameters:
         - name: secretType
           in: path
@@ -3019,12 +3054,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/vault/secret/list/meta/{secretType}:
     get:
       tags:
-        - vault
+        - Vault
       description: |-
         List the secret names at the specified path. The path must represent a folder, not an actual secret name. If the path does not have a trailing slash one will be inserted. Secret names should not encode private information.
 
@@ -3059,6 +3092,8 @@ paths:
         - user: any user
         - service: any service
       operationId: listSecretMeta
+      security:
+        - TapisJWT: []
       parameters:
         - name: secretType
           in: path
@@ -3134,12 +3169,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/vault/secret/{secretType}/{secretName}:
     get:
       tags:
-        - vault
+        - Vault
       description: |-
         Read a versioned secret. By default, the latest version of the secret is read. If the *version* query parameter is specified then that version of the secret is read.  The *version* parameter should be passed as an integer with zero indicating the latest version of the secret. A NOT FOUND status code is returned if the secret version does not exist or if it's deleted or destroyed.
 
@@ -3176,6 +3209,8 @@ paths:
         - user: any user
         - service: any service
       operationId: readSecret
+      security:
+        - TapisJWT: []
       parameters:
         - name: secretType
           in: path
@@ -3268,11 +3303,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
     post:
       tags:
-        - vault
+        - Vault
       description: |-
         Create or update a secret. The JSON payload contains a required *data* object and an optional *options* object.  It also contains the required tenant and user fields.
 
@@ -3331,6 +3364,8 @@ paths:
 
         The generated password simply replaces the item's value and the key name is left unchanged.
       operationId: writeSecret
+      security:
+        - TapisJWT: []
       parameters:
         - name: secretType
           in: path
@@ -3415,12 +3450,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/vault/secret/read/meta/{secretType}/{secretName}:
     get:
       tags:
-        - vault
+        - Vault
       description: |-
         List a secret's metadata including its version information. The input parameter must be a secret name, not a folder. The result includes which version of the secret is the latest.
 
@@ -3455,6 +3488,8 @@ paths:
         - user: any user
         - service: any service
       operationId: readSecretMeta
+      security:
+        - TapisJWT: []
       parameters:
         - name: secretType
           in: path
@@ -3535,12 +3570,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/vault/secret/undelete/{secretType}/{secretName}:
     post:
       tags:
-        - vault
+        - Vault
       description: |-
         Restore one or more versions of a secret that have previously been deleted. This endpoint undoes soft deletions performed using the *secret/delete/{secretType}/{secretName}* endpoint.
 
@@ -3581,6 +3614,8 @@ paths:
         - user: any user
         - service: any service
       operationId: undeleteSecret
+      security:
+        - TapisJWT: []
       parameters:
         - name: secretType
           in: path
@@ -3665,12 +3700,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
   /security/vault/secret/validateServicePassword/{secretName}:
     post:
       tags:
-        - vault
+        - Vault
       description: |-
         Validate a service's password. The JSON payload contains the password that needs to be validated against the password stored in the vault for the service specifiedin the X-Tapis-User header. The secret name is the path under whichthe password was stored.
 
@@ -3681,6 +3714,8 @@ paths:
 
         Only services can make this request.
       operationId: validateServicePassword
+      security:
+        - TapisJWT: []
       parameters:
         - name: secretName
           in: path
@@ -3729,9 +3764,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-      security:
-        - TapisJWT: []
+
+# ------------------------------------------------------------------------------
+# --- Components ---------------------------------------------------------------
+# ------------------------------------------------------------------------------
 components:
+  securitySchemes:
+    TapisJWT:
+      type: apiKey
+      description: Tapis signed JWT token authentication
+      name: X-Tapis-Token
+      in: header
+  # ------------------------------------------------------------------------------
+  # --- Model objects ------------------------------------------------------------
+  # ------------------------------------------------------------------------------
   schemas:
     RespChangeCount:
       type: object
@@ -4487,9 +4533,3 @@ components:
           type: object
           additionalProperties:
             type: string
-  securitySchemes:
-    TapisJWT:
-      type: apiKey
-      description: Tapis signed JWT token authentication
-      name: X-Tapis-Token
-      in: header
