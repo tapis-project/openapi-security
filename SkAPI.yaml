@@ -46,6 +46,11 @@ tags:
       provide a secretType and secretName on most of its calls. Using this information, SK calculates the virtual
       paths (i.e., locations) in Vault being referenced. Users do not need to understand the Vault naming scheme and
       SK has complete control of where secrets reside inside of Vault.
+  - name: Admin
+    description: |
+      Administrative functions. Manage special role types, such as RESTRICTED_SVC and TENANT_ADMIN.
+      Grant and revoke tenant administrative privileges for users. Request the SK service to re-read tenant
+      information and create roles as needed, for when a new tenant is created.
 
 # ------------------------------------------------------------------------------
 # --- Paths -------------------------------------------------------------------
@@ -57,7 +62,7 @@ paths:
     get:
       tags:
         - General
-      description: Lightwieght health check for liveness. No authorization required.
+      description: Lightweight health check for liveness. No authorization required.
       operationId: checkHealth
       responses:
         '200':
@@ -76,7 +81,7 @@ paths:
     get:
       tags:
         - General
-      description: Lightwieght readiness check. No authorization required.
+      description: Lightweight readiness check. No authorization required.
       operationId: ready
       responses:
         '200':
@@ -96,7 +101,7 @@ paths:
     get:
       tags:
         - General
-      description: Lightwieght readiness check. No authorization required.
+      description: Lightweight readiness check. No authorization required.
       operationId: readycheck
       responses:
         '200':
@@ -415,7 +420,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/RoleNameString'
         - name: tenant
           in: query
           schema:
@@ -471,7 +476,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/RoleNameString'
         - name: tenant
           in: query
           schema:
@@ -575,7 +580,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/RoleNameString'
         - name: tenant
           in: query
           schema:
@@ -1034,7 +1039,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/RoleNameString'
         - name: pretty
           in: query
           schema:
@@ -1094,7 +1099,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/RoleNameString'
         - name: pretty
           in: query
           schema:
@@ -1157,7 +1162,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/RoleNameString'
         - name: pretty
           in: query
           schema:
@@ -2054,7 +2059,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/RoleNameString'
         - name: tenant
           in: query
           schema:
@@ -2802,6 +2807,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
+  # --- Paths for Vault ------------------------------------------
   /security/vault/secret/delete/{secretType}/{secretName}:
     post:
       tags:
@@ -3960,6 +3966,319 @@ paths:
               schema:
                 $ref: '#/components/schemas/RespBasic'
 
+  # --- Paths for Admin ------------------------------------------
+  # --- Manage tenant admin roles ---
+  /security/admin/grantTenantAdminRole:
+    post:
+      tags:
+          Admin
+      description: |
+        Grant a user the tenant administrator role. A valid tenant and user must be specified in the request body.
+        The user specified in the JWT must be an administrator in the tenant specified in the request body.
+      operationId: grantTenantAdminRole
+      security:
+        - TapisJWT: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqGrantAdminRole'
+        required: true
+      responses:
+        '200':
+          description: Role assigned to user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespChangeCount'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '404':
+          description: Named role not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespName'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+  /security/admin/revokeTenantAdminRole:
+    post:
+      tags:
+        - Admin
+      description: |
+        Revoke the previously granted tenant administrator role from a user. No action is taken if the user is not
+        currently assigned the role (the request is idempotent). The request will not be honored if revoking the role
+        would leave the tenant with no administrator.
+
+        The user specified in the JWT must themselves be an administrator and a valid tenant and user must be specified
+        in the request body.
+      operationId: revokeTenantAdminRole
+      security:
+        - TapisJWT: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqRevokeAdminRole'
+        required: true
+      responses:
+        '200':
+          description: Role removed from user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespChangeCount'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+  # --- Manage special role types ---
+  # TODO getRoles TBD - or use current non-admin endpoint?
+  # TODO getRole  TBD - or use current non-admin endpoint?
+  # TODO createrole
+  # TODO deleterole
+  # TODO revokerole
+  # TODO grantrole
+  # TODO ?????????????????????????????????????????????????????????????????????????????????????????????????????
+  /security/admin/role:
+    get:
+      tags:
+        - Admin
+      description: |
+        Get the names of all roles in the tenant in alphabetic order. Future enhancements will include search filtering.
+
+        A valid tenant must be specified as a query parameter. This request is authorized if the requestor is a user
+        that has access to the specified tenant or if the requestor is a service.
+      operationId: getRoleNames
+      security:
+        - TapisJWT: []
+      parameters:
+        - name: tenant
+          in: query
+          schema:
+            type: string
+        - name: pretty
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of role names returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespNameArray'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+    post:
+      tags:
+        - Admin
+      description: |
+        Create a role using a request body. Role names are case sensitive, alpha-numeric strings that can also contain
+        underscores. Role names must start with an alphbetic character and can be no more than 58 characters in length.
+        The desciption can be no more than 2048 characters long. If the role already exists, this request has no effect.
+
+        For the request to be authorized, the requestor must be either an administrator or a service allowed to perform
+        updates in the new role's tenant.
+      operationId: createRole
+      security:
+        - TapisJWT: []
+      parameters:
+        - name: pretty
+          in: query
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqCreateRole'
+        required: true
+      responses:
+        '200':
+          description: Role existed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespResourceUrl'
+        '201':
+          description: Role created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespResourceUrl'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+  /security/admin/role/{roleName}:
+    get:
+      tags:
+        - Admin
+      description: |
+        Get the named role's definition. A valid tenant must be specified as a query parameter. This request is
+        authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
+      operationId: getRoleByName
+      security:
+        - TapisJWT: []
+      parameters:
+        - name: roleName
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RoleNameString'
+        - name: tenant
+          in: query
+          schema:
+            type: string
+        - name: pretty
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Named role returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespRole'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '404':
+          description: Named role not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespName'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+    delete:
+      tags:
+        - Admin
+      description: |
+        Delete the named role. A valid tenant and user must be specified as query parameters.
+
+        This request is authorized only if the authenticated user is either the role owner or an administrator.
+      operationId: deleteRoleByName
+      security:
+        - TapisJWT: []
+      parameters:
+        - name: roleName
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RoleNameString'
+        - name: tenant
+          in: query
+          schema:
+            type: string
+        - name: pretty
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Role deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespChangeCount'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+  # TODO ?????????????????????????????????????????????????????????????????????????????????????????????????????
+
 # ------------------------------------------------------------------------------
 # --- Components ---------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -3983,9 +4302,9 @@ components:
         tenant:
           type: string
         name:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
         description:
-          type: string
+          $ref: '#/components/schemas/DescriptionString'
         owner:
           type: string
         ownerTenant:
@@ -4123,6 +4442,14 @@ components:
         cas:
           type: integer
           format: int32
+    # --- String types with constraints ------------------------------------
+    RoleNameString:
+      type: string
+      minLength: 1
+      maxLength: 60
+    DescriptionString:
+      type: string
+      maxLength: 2048
     # -------------------------------------------------------------------------
     # --- Request objects -----------------------------------------------------
     # -------------------------------------------------------------------------
@@ -4132,16 +4459,16 @@ components:
         roleTenant:
           type: string
         parentRoleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
         childRoleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
     ReqAddRolePermission:
       type: object
       properties:
         roleTenant:
           type: string
         roleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
         permSpec:
           type: string
     ReqPreviewPathPrefix:
@@ -4152,7 +4479,7 @@ components:
         schema:
           type: string
         roleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
         oldSystemId:
           type: string
         newSystemId:
@@ -4167,9 +4494,9 @@ components:
         roleTenant:
           type: string
         parentRoleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
         childRoleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
     ReqRemovePermissionFromAllRoles:
       type: object
       properties:
@@ -4183,7 +4510,7 @@ components:
         roleTenant:
           type: string
         roleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
         permSpec:
           type: string
     ReqReplacePathPrefix:
@@ -4194,7 +4521,7 @@ components:
         schema:
           type: string
         roleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
         oldSystemId:
           type: string
         newSystemId:
@@ -4216,7 +4543,7 @@ components:
         roleTenant:
           type: string
         newRoleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
     ReqUpdateRoleOwner:
       type: object
       properties:
@@ -4232,8 +4559,8 @@ components:
         roleTenant:
           type: string
         roleName:
-          type: string
-        description:
+          $ref: '#/components/schemas/RoleNameString'
+    description:
           type: string
     ReqShareResource:
       type: object
@@ -4267,7 +4594,7 @@ components:
         user:
           type: string
         roleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
     ReqGrantUserRoleWithPermission:
       type: object
       properties:
@@ -4276,7 +4603,7 @@ components:
         user:
           type: string
         roleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
         permSpec:
           type: string
     ReqGrantUserPermission:
@@ -4296,7 +4623,7 @@ components:
         user:
           type: string
         roleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
         orAdmin:
           type: boolean
     ReqUserHasRoleMulti:
@@ -4309,7 +4636,7 @@ components:
         roleNames:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/RoleNameString'
         orAdmin:
           type: boolean
     ReqUserIsAdmin:
@@ -4367,7 +4694,7 @@ components:
         user:
           type: string
         roleName:
-          type: string
+          $ref: '#/components/schemas/RoleNameString'
     ReqVersions:
       type: object
       properties:
@@ -4737,3 +5064,11 @@ components:
     # -------------------------------------------------------------------------
     # --- Enums ---------------------------------------------------------------
     # -------------------------------------------------------------------------
+    RoleTypeEnum:
+      type: string
+      enum:
+        - USER
+        - USER_DEFAULT
+        - RESTRICTED_SVC
+        - TENANT_ADMIN
+        - SITE_ADMIN
