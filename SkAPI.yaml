@@ -4183,6 +4183,10 @@ components:
     # -------------------------------------------------------------------------
     ReqAddChildRole:
       type: object
+      required:
+        - roleTenant
+        - parentRoleName
+        - childRoleName
       properties:
         roleTenant:
           type: string
@@ -4192,6 +4196,10 @@ components:
           $ref: '#/components/schemas/RoleNameString'
     ReqAddRolePermission:
       type: object
+      required:
+        - roleTenant
+        - roleName
+        - permSpec
       properties:
         roleTenant:
           type: string
@@ -4289,6 +4297,10 @@ components:
           type: string
     ReqCreateRole:
       type: object
+      required:
+        - roleTenant
+        - roleName
+        - description
       properties:
         roleTenant:
           type: string
@@ -4296,7 +4308,7 @@ components:
           $ref: '#/components/schemas/RoleTypeEnum'
         roleName:
           $ref: '#/components/schemas/RoleNameString'
-    description:
+        description:
           type: string
     ReqShareResource:
       type: object
@@ -4324,6 +4336,10 @@ components:
           type: string
     ReqGrantRole:
       type: object
+      required:
+        - tenant
+        - user
+        - roleName
       properties:
         tenant:
           type: string
@@ -4335,6 +4351,11 @@ components:
           $ref: '#/components/schemas/RoleNameString'
     ReqGrantRoleWithPermission:
       type: object
+      required:
+        - tenant
+        - user
+        - roleName
+        - permSpec
       properties:
         tenant:
           type: string
@@ -4348,6 +4369,10 @@ components:
           type: string
     ReqGrantUserPermission:
       type: object
+      required:
+        - tenant
+        - user
+        - permSpec
       properties:
         tenant:
           type: string
