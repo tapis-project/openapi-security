@@ -1,7 +1,9 @@
 openapi: 3.0.3
 info:
   title: Tapis Security API
-  description: The Tapis Security API provides for management of Security Kernel (SK) authorization and secrets resources.
+  description: |
+    The Tapis Security API provides for management of Security Kernel (SK) role-based authorization
+    and secrets resources.
   version: '1.8.2'
   termsOfService: "https://tapis-project.org"
   contact:
@@ -25,7 +27,33 @@ tags:
   - name: General
     description: General service health and readiness of the Security Kernel (SK)
   - name: Roles
-    description: Manage Tapis roles and permissions. Create, retrieve, update, etc.
+    description: |
+      Manage Tapis roles and permissions. Create, retrieve, update, etc. A role contains zero or more permissions
+      and can be granted to or revoked from individual users in a tenant.
+      
+      Each role belongs to a tenant and has a type. The default type for a role is USER. This is a general purpose
+      type of role. This type of role can be managed by the role owner, a tenant administrator or a site administrator.
+
+      Roles of type USER_DEFAULT are implicitly created and assigned for each user in a tenant. This type of role is
+      used by other Tapis services, such as Systems and Apps, to provide fine grained access to resources.
+      
+      Each tenant has at least one user who is a tenant administrator. Being a tenant administrator simply means
+      the user as been assigned a special role of type TENANT_ADMIN. These roles and the initial users assigned to
+      them are set up when the tenant is created. These types of roles are managed by tenant and site administrators.
+      
+      Another type of special role is RESTRICTED_SVC. These roles are used for authorization of service to service calls
+      within Tapis. Some of the Tapis core services are allowed to call each other without restriction, but some Tapis
+      services have certain restrictions. Also, the addition of third party services to Tapis is supported. Third party
+      services should always have some restrictions. These types of roles live in the site admin tenant and are managed
+      by site administrators.
+      
+      Each Tapis site has at least one user who is a site administrator. Site administrators are special users
+      associated with the admin tenant for the site. They must be created and initialized as part of site setup.
+      The initial site administrator is created during site setup and assigned a special role of type SITE_ADMIN.
+      These types of roles live in the site admin tenant and are managed by site administrators.
+      The site administrator users are not connected with an identity provider (IdP). 
+      
+      Supported role types are: USER, USER_DEFAULT, TENANT_ADMIN, RESTRICTED_SVC and SITE_ADMIN.
   - name: Users
     description: Manage roles and permissions for users. Grant, revoke, retrieve, etc.
   - name: Sharing
@@ -48,8 +76,8 @@ tags:
       SK has complete control of where secrets reside inside of Vault.
   - name: Admin
     description: |
-      Administrative functions. Grant and revoke tenant administrative privileges for users. Request the SK service to
-      re-read tenant information and create roles as needed, for when a new tenant is created.
+      Administrative functions. Request the SK service to re-read tenant information and create roles as needed,
+      for when a new tenant is created.
 
 # ------------------------------------------------------------------------------
 # --- Paths -------------------------------------------------------------------
@@ -146,6 +174,7 @@ paths:
       description: |
         Add a child role to another role using a request body. If the child already exists, then the request has no
         effect and the change count returned is zero. Otherwise, the child is added and the change count is one.
+        Supported only for roles of type *USER*.
 
         The user@tenant identity specified in JWT is authorized to make this request only if that user is an
         administrator or if the user owns both the parent and child roles.
@@ -254,7 +283,9 @@ paths:
         grantees are allowed access to /home/bud and all its children (if it's a directory), but not to the file
         /home/buddy.txt nor the directory /home/bud2.
 
-        This request is authorized only if the authenticated user is either the role owner or an administrator.
+        For roles of type USER the request is authorized only if the requestor is the role owner, a tenant
+        administrator or a site administrator. For roles of type TENANT_ADMIN the requestor must a tenant or site
+        administrator. For roles of type RESTRICTED_SVC the requestor must a site administrator.
       operationId: addRolePermission
       security:
         - TapisJWT: []
@@ -318,6 +349,10 @@ paths:
           in: query
           schema:
             type: string
+        - name: roleType
+          in: query
+          schema:
+            $ref: '#/components/schemas/RoleTypeEnum'
         - name: pretty
           in: query
           schema:
@@ -466,7 +501,9 @@ paths:
       description: |
         Delete the named role. A valid tenant and user must be specified as query parameters.
 
-        This request is authorized only if the authenticated user is either the role owner or an administrator.
+        For roles of type USER the request is authorized only if the requestor is the role owner, a tenant
+        administrator or a site administrator. For roles of type TENANT_ADMIN the requestor must a tenant or site
+        administrator. For roles of type RESTRICTED_SVC the requestor must a site administrator.
       operationId: deleteRoleByName
       security:
         - TapisJWT: []
@@ -520,7 +557,6 @@ paths:
 
         A user's default role is constructed by prepending '$$' to the user's name. This implies the maximum length of a
         user name is 58 since role names are limited to 60 characters.
-
       operationId: getDefaultUserRole
       security:
         - TapisJWT: []
@@ -707,7 +743,8 @@ paths:
       tags:
         - Roles
       description: |
-        Remove a child role from a parent role using a request body. A valid tenant and user must be specified in the request body.
+        Remove a child role from a parent role using a request body. A valid tenant and user must be specified in the
+        request body. Supported only for roles of type *USER*.
 
         The user@tenant identity specified in JWT is authorized to make this request only if that user is an administrator
         or if they own the parent role.
@@ -888,7 +925,9 @@ paths:
         Remove a permission from a role using a request body. A valid role, roleTenant and permission must be specified
         in the request body.
 
-        Only the role owner or administrators are authorized to make this call.
+        For roles of type USER the request is authorized only if the requestor is the role owner, a tenant
+        administrator or a site administrator. For roles of type TENANT_ADMIN the requestor must a tenant or site
+        administrator. For roles of type RESTRICTED_SVC the requestor must a site administrator.
       operationId: removeRolePermission
       security:
         - TapisJWT: []
@@ -2104,10 +2143,15 @@ paths:
       tags:
         - Users
       description: |
-        Grant a user the specified role. A valid tenant and user must be specified in the request body.
+        Grant a user the specified role. A valid tenant and user must be specified in the request body. The type of
+        role to grant may be specified in the request body. Allowed types are USER, TENANT_ADMIN and
+        RESTRICTED_SVC. Default type is USER.
 
-        This request is authorized only if the requestor is the role owner or an administrator. The user and the role
-        must be in the same tenant.
+        The user and the role must be in the same tenant.
+        
+        For roles of type USER the request is authorized only if the requestor is the role owner, a tenant
+        administrator or a site administrator. For roles of type TENANT_ADMIN the requestor must a tenant or site
+        administrator. For roles of type RESTRICTED_SVC the requestor must a site administrator.
       operationId: grantRole
       security:
         - TapisJWT: []
@@ -2121,7 +2165,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReqGrantUserRole'
+              $ref: '#/components/schemas/ReqGrantRole'
         required: true
       responses:
         '200':
@@ -2163,7 +2207,11 @@ paths:
         permission to the role if it is not already a member of the role and then assigns the role to the user. The
         change count returned can range from zero to two depending on how many insertions were actually required.
 
-        Only the role owner or an administrator is authorized to make this request. The user and the role must be in the same tenant.
+        The user and the role must be in the same tenant.
+        
+        For roles of type USER the request is authorized only if the requestor is the role owner, a tenant
+        administrator or a site administrator. For roles of type TENANT_ADMIN the requestor must a tenant or site
+        administrator. For roles of type RESTRICTED_SVC the requestor must a site administrator.
       operationId: grantRoleWithPermission
       security:
         - TapisJWT: []
@@ -2177,7 +2225,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReqGrantUserRoleWithPermission'
+              $ref: '#/components/schemas/ReqGrantRoleWithPermission'
         required: true
       responses:
         '200':
@@ -2216,8 +2264,7 @@ paths:
         - Users
       description: |
         Grant a user the specified permission by assigning that permission to to the user's default role. If the user's
-        default role does not exist,this request will create that role and grant it to the user before assigning the
-        permission to the role.
+        default role does not exist it will be created.
 
         A user's default role name is discoverable by calling either of the user/defaultRole or role/defaultRole endpoints.
 
@@ -2653,16 +2700,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-  /security/user/revokeUserRole:
+  /security/user/revokeRole:
     post:
       tags:
         - Users
       description: |
         Revoke a previously granted role from a user. No action is taken if the user is not currently assigned the role.
-        This request is idempotent.
+        This request is idempotent.  The type of role to grant may be specified in the request body.
+        Allowed types are USER, TENANT_ADMIN and RESTRICTED_SVC. Default type is USER.
 
-        This request is authorized only if the requestor is the role owner or an administrator.
-      operationId: revokeUserRole
+        The user and the role must be in the same tenant.
+        
+        For roles of type USER the request is authorized only if the requestor is the role owner, a tenant
+        administrator or a site administrator. For roles of type TENANT_ADMIN the requestor must a tenant or site
+        administrator. For roles of type RESTRICTED_SVC the requestor must a site administrator.
+      operationId: revokeRole
       security:
         - TapisJWT: []
       parameters:
@@ -2675,7 +2727,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReqRevokeUserRole'
+              $ref: '#/components/schemas/ReqRevokeRole'
         required: true
       responses:
         '200':
@@ -3973,11 +4025,10 @@ components:
     SkRole:
       type: object
       properties:
-        id:
-          type: integer
-          format: int32
         tenant:
           type: string
+        type:
+          $ref: '#/components/schemas/RoleTypeEnum'
         name:
           $ref: '#/components/schemas/RoleNameString'
         description:
@@ -4144,6 +4195,8 @@ components:
       properties:
         roleTenant:
           type: string
+        roleType:
+          $ref: '#/components/schemas/RoleTypeEnum'
         roleName:
           $ref: '#/components/schemas/RoleNameString'
         permSpec:
@@ -4186,6 +4239,8 @@ components:
       properties:
         roleTenant:
           type: string
+        roleType:
+          $ref: '#/components/schemas/RoleTypeEnum'
         roleName:
           $ref: '#/components/schemas/RoleNameString'
         permSpec:
@@ -4219,6 +4274,8 @@ components:
       properties:
         roleTenant:
           type: string
+        roleType:
+          $ref: '#/components/schemas/RoleTypeEnum'
         newRoleName:
           $ref: '#/components/schemas/RoleNameString'
     ReqUpdateRoleOwner:
@@ -4235,6 +4292,8 @@ components:
       properties:
         roleTenant:
           type: string
+        roleType:
+          $ref: '#/components/schemas/RoleTypeEnum'
         roleName:
           $ref: '#/components/schemas/RoleNameString'
     description:
@@ -4263,22 +4322,26 @@ components:
           type: string
         user:
           type: string
-    ReqGrantUserRole:
+    ReqGrantRole:
       type: object
       properties:
         tenant:
           type: string
         user:
           type: string
+        roleType:
+          $ref: '#/components/schemas/RoleTypeEnum'
         roleName:
           $ref: '#/components/schemas/RoleNameString'
-    ReqGrantUserRoleWithPermission:
+    ReqGrantRoleWithPermission:
       type: object
       properties:
         tenant:
           type: string
         user:
           type: string
+        roleType:
+          $ref: '#/components/schemas/RoleTypeEnum'
         roleName:
           $ref: '#/components/schemas/RoleNameString'
         permSpec:
@@ -4299,6 +4362,8 @@ components:
           type: string
         user:
           type: string
+        roleType:
+          $ref: '#/components/schemas/RoleTypeEnum'
         roleName:
           $ref: '#/components/schemas/RoleNameString'
         orAdmin:
@@ -4363,13 +4428,15 @@ components:
           type: string
         permSpec:
           type: string
-    ReqRevokeUserRole:
+    ReqRevokeRole:
       type: object
       properties:
         tenant:
           type: string
         user:
           type: string
+        roleType:
+          $ref: '#/components/schemas/RoleTypeEnum'
         roleName:
           $ref: '#/components/schemas/RoleNameString'
     ReqVersions:
@@ -4743,6 +4810,7 @@ components:
     # -------------------------------------------------------------------------
     RoleTypeEnum:
       type: string
+      default: USER
       enum:
         - USER
         - USER_DEFAULT
