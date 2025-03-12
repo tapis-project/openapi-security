@@ -4211,6 +4211,11 @@ components:
           type: string
     ReqPreviewPathPrefix:
       type: object
+      required:
+        - tenant
+        - schema
+        - oldSystemId
+        - newSystemId
       properties:
         tenant:
           type: string
@@ -4228,6 +4233,10 @@ components:
           type: string
     ReqRemoveChildRole:
       type: object
+      required:
+        - roleTenant
+        - parentRoleName
+        - childRoleName
       properties:
         roleTenant:
           type: string
@@ -4237,6 +4246,9 @@ components:
           $ref: '#/components/schemas/RoleNameString'
     ReqRemovePermissionFromAllRoles:
       type: object
+      required:
+        - tenant
+        - permSpec
       properties:
         tenant:
           type: string
@@ -4244,6 +4256,10 @@ components:
           type: string
     ReqRemoveRolePermission:
       type: object
+      required:
+        - roleTenant
+        - roleName
+        - permSpec
       properties:
         roleTenant:
           type: string
@@ -4255,6 +4271,11 @@ components:
           type: string
     ReqReplacePathPrefix:
       type: object
+      required:
+        - tenant
+        - schema
+        - oldSystemId
+        - newSystemId
       properties:
         tenant:
           type: string
@@ -4272,6 +4293,9 @@ components:
           type: string
     ReqUpdateRoleDescription:
       type: object
+      required:
+        - roleTenant
+        - newDescription
       properties:
         roleTenant:
           type: string
@@ -4279,6 +4303,9 @@ components:
           type: string
     ReqUpdateRoleName:
       type: object
+      required:
+        - roleTenant
+        - newRoleName
       properties:
         roleTenant:
           type: string
@@ -4288,6 +4315,9 @@ components:
           $ref: '#/components/schemas/RoleNameString'
     ReqUpdateRoleOwner:
       type: object
+      required:
+        - roleTenant
+        - newOwner
       properties:
         roleTenant:
           type: string
