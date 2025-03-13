@@ -3918,7 +3918,7 @@ paths:
   /security/admin/grantTenantAdminRole:
     post:
       tags:
-          Admin
+        - Admin
       description: |
         Grant a user the tenant administrator role. A valid tenant and user must be specified in the request body.
         The user specified in the JWT must be an administrator in the tenant specified in the request body.
@@ -4342,6 +4342,13 @@ components:
           type: string
     ReqShareResource:
       type: object
+      required:
+        - grantor
+        - grantee
+        - tenant
+        - resourceType
+        - resourceId1
+        - privilege
       properties:
         grantor:
           type: string
@@ -4359,6 +4366,9 @@ components:
           type: string
     ReqGrantAdminRole:
       type: object
+      required:
+        - tenant
+        - user
       properties:
         tenant:
           type: string
@@ -4412,6 +4422,10 @@ components:
           type: string
     ReqUserHasRole:
       type: object
+      required:
+        - tenant
+        - user
+        - roleName
       properties:
         tenant:
           type: string
@@ -4425,6 +4439,10 @@ components:
           type: boolean
     ReqUserHasRoleMulti:
       type: object
+      required:
+        - tenant
+        - user
+        - roleNames
       properties:
         tenant:
           type: string
@@ -4438,6 +4456,9 @@ components:
           type: boolean
     ReqUserIsAdmin:
       type: object
+      required:
+        - tenant
+        - user
       properties:
         tenant:
           type: string
@@ -4445,6 +4466,10 @@ components:
           type: string
     ReqUserIsPermitted:
       type: object
+      required:
+        - tenant
+        - user
+        - permSpec
       properties:
         tenant:
           type: string
@@ -4456,6 +4481,10 @@ components:
           type: boolean
     ReqUserIsPermittedMulti:
       type: object
+      required:
+        - tenant
+        - user
+        - permSpecs
       properties:
         tenant:
           type: string
@@ -4469,6 +4498,9 @@ components:
           type: boolean
     ReqRevokeAdminRole:
       type: object
+      required:
+        - tenant
+        - user
       properties:
         tenant:
           type: string
@@ -4476,6 +4508,10 @@ components:
           type: string
     ReqRevokeUserPermission:
       type: object
+      required:
+        - tenant
+        - user
+        - permSpec
       properties:
         tenant:
           type: string
@@ -4485,6 +4521,10 @@ components:
           type: string
     ReqRevokeRole:
       type: object
+      required:
+        - tenant
+        - user
+        - roleName
       properties:
         tenant:
           type: string
@@ -4496,6 +4536,10 @@ components:
           $ref: '#/components/schemas/RoleNameString'
     ReqVersions:
       type: object
+      required:
+        - tenant
+        - user
+        - versions
       properties:
         tenant:
           type: string
@@ -4508,6 +4552,10 @@ components:
             format: int32
     ReqValidateServicePwd:
       type: object
+      required:
+        - tenant
+        - user
+        - password
       properties:
         tenant:
           type: string
@@ -4517,6 +4565,10 @@ components:
           type: string
     ReqWriteSecret:
       type: object
+      required:
+        - tenant
+        - user
+        - data
       properties:
         tenant:
           type: string
