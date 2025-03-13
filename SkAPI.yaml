@@ -37,12 +37,12 @@ tags:
       Roles of type USER_DEFAULT are implicitly created and assigned for each user in a tenant. This type of role is
       used by other Tapis services, such as Systems and Apps, to provide fine grained access to resources.
       
-      Each tenant has at least one user who is a tenant administrator. Being a tenant administrator simply means
-      the user as been assigned a special role of type TENANT_ADMIN. These roles and the initial users assigned to
-      them are set up when the tenant is created. These types of roles are managed by tenant and site administrators.
+      Each tenant has at least one user who is a tenant administrator. A user becomes a tenant administrator by being
+      assigned a special role of type TENANT_ADMIN. These roles and the initial users assigned to them are set up when
+      tenants are created. These types of roles are managed by tenant and site administrators.
       
       Another type of special role is RESTRICTED_SVC. These roles are used for authorization of service to service calls
-      within Tapis. Some of the Tapis core services are allowed to call each other without restriction, but some Tapis
+      within Tapis. Some of the Tapis core services are allowed to call each other without restriction, but other Tapis
       services have certain restrictions. Also, the addition of third party services to Tapis is supported. Third party
       services should always have some restrictions. These types of roles live in the site admin tenant and are managed
       by site administrators.
@@ -61,7 +61,7 @@ tags:
       In addition to fine grained permissions support, some Tapis services also support a higher level
       approach to granting access. This approach is known simply as *sharing*. Sharing allows a resource
       owner to share resources with a set of users as well as share publicly with all users in a tenant.
-      Each service that supports sharing uses the Security Kernel to manage sharing information.
+      Each service that supports sharing uses the Security Kernel (SK) to manage sharing information.
       Currently the Systems, Apps and Files services incorporate sharing.
       Please see the individual service documentation for more information.
   - name: Vault
@@ -70,14 +70,14 @@ tags:
       access to Vault for users or services. All access is through SK. SK allows secrets to be created, read,
       versioned, deleted and destroyed by reflecting in its API the capabilities of Vault.
 
-      SK overlays Vault capabilities with its own typed secrets model. The basic idea is that SK requires users to
-      provide a secretType and secretName on most of its calls. Using this information, SK calculates the virtual
-      paths (i.e., locations) in Vault being referenced. Users do not need to understand the Vault naming scheme and
-      SK has complete control of where secrets reside inside of Vault.
+      SK overlays Vault capabilities with its own typed secrets model. SK requires users to provide a secretType and
+      secretName on most of its calls. Using this information, SK calculates the virtual paths (i.e., locations) in
+      Vault being referenced. Users do not need to understand the Vault naming scheme and SK has complete control of
+      where secrets reside inside of Vault.
   - name: Admin
     description: |
-      Administrative functions. Request the SK service to re-read tenant information and create roles as needed,
-      for when a new tenant is created.
+      Administrative functions. Such as requesting the SK service to re-read tenant information and create roles as
+      needed, for when a new tenant is created.
 
 # ------------------------------------------------------------------------------
 # --- Paths -------------------------------------------------------------------
