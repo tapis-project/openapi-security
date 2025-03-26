@@ -3631,99 +3631,37 @@ paths:
                 $ref: '#/components/schemas/RespBasic'
 
   # --- Paths for Admin ------------------------------------------
-  # --- Manage tenant admin roles ---
-  /security/admin/grantTenantAdminRole:
-    post:
+  /security/admin/reinitialize:
+    get:
       tags:
         - Admin
       description: |
-        Grant a user the tenant administrator role. A valid tenant and user must be specified in the request body.
-        The user specified in the JWT must be an administrator in the tenant specified in the request body.
-      operationId: grantTenantAdminRole
-      security:
-        - TapisJWT: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReqGrantAdminRole'
-        required: true
-      responses:
-        '200':
-          description: Role assigned to user.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespChangeCount'
-        '400':
-          description: Input error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespBasic'
-        '401':
-          description: Not authorized.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespBasic'
-        '404':
-          description: Named role not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespName'
-        '500':
-          description: Server error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespBasic'
-  /security/admin/revokeTenantAdminRole:
-    post:
-      tags:
-        - Admin
-      description: |
-        Revoke the previously granted tenant administrator role from a user. No action is taken if the user is not
-        currently assigned the role (the request is idempotent). The request will not be honored if revoking the role
-        would leave the tenant with no administrator.
+        Request to reinitialize tenants for the site.  This should be called if tenants are added to the site.  When
+        called any site initialization will be run again.  At present this is mainly just asking for a fresh list of
+        the tenants from the tenant service, and reprocessing each tenant (this might include role creation or assignment
+        for tenant admins).
 
-        The user specified in the JWT must themselves be an administrator and a valid tenant and user must be specified
-        in the request body.
-      operationId: revokeTenantAdminRole
+        There is code that prevents running this "too frequently".  The current default value is 10 minutes, meaning
+        that if you make this request and try to do it again before 10 minutes elapses, the request is ignored.
+        
+        Only site admins can make this request.
+      operationId: reinitializeSite
       security:
         - TapisJWT: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReqRevokeAdminRole'
-        required: true
       responses:
         '200':
-          description: Role removed from user.
+          description: Site reinitialized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespChangeCount'
-        '400':
-          description: Input error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespBasic'
-        '401':
-          description: Not authorized.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RespBasic'
-        '500':
+                $ref: '#/components/schemas/RespAuthorized'
+        '503':
           description: Server error.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
+
 
 # ------------------------------------------------------------------------------
 # --- Components ---------------------------------------------------------------
@@ -4081,16 +4019,6 @@ components:
           type: string
         privilege:
           type: string
-    ReqGrantAdminRole:
-      type: object
-      required:
-        - tenant
-        - user
-      properties:
-        tenant:
-          type: string
-        user:
-          type: string
     ReqGrantRole:
       type: object
       required:
@@ -4213,16 +4141,6 @@ components:
             type: string
         orAdmin:
           type: boolean
-    ReqRevokeAdminRole:
-      type: object
-      required:
-        - tenant
-        - user
-      properties:
-        tenant:
-          type: string
-        user:
-          type: string
     ReqRevokeUserPermission:
       type: object
       required:
