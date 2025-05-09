@@ -430,6 +430,10 @@ paths:
           in: query
           schema:
             type: string
+        - name: roleType
+          in: query
+          schema:
+            $ref: '#/components/schemas/RoleTypeEnum'
       responses:
         '200':
           description: Named role returned.
@@ -483,6 +487,10 @@ paths:
           in: query
           schema:
             type: string
+        - name: roleType
+          in: query
+          schema:
+            $ref: '#/components/schemas/RoleTypeEnum'
       responses:
         '200':
           description: Role deleted.
