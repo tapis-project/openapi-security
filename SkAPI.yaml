@@ -3884,6 +3884,8 @@ components:
           type: string
         schema:
           type: string
+        roleType:
+          $ref: '#/components/schemas/RoleTypeEnum'
         roleName:
           $ref: '#/components/schemas/RoleNameString'
         oldSystemId:
@@ -3944,6 +3946,8 @@ components:
           type: string
         schema:
           type: string
+        roleType:
+          $ref: '#/components/schemas/RoleTypeEnum'
         roleName:
           $ref: '#/components/schemas/RoleNameString'
         oldSystemId:
