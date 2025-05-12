@@ -1949,6 +1949,10 @@ paths:
           in: query
           schema:
             type: string
+        - name: roleType
+          in: query
+          schema:
+            $ref: '#/components/schemas/RoleTypeEnum'
       responses:
         '200':
           description: Sorted list of users assigned a role.
