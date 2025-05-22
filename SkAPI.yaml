@@ -3608,7 +3608,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReqValidateServicePwd'
+              $ref: '#/components/schemas/ReqValidatePwd'
         required: true
       responses:
         '200':
@@ -3648,7 +3648,7 @@ paths:
         - Vault
       description: |
         Validate a Site Admin's password. The JSON payload contains the password that needs to be validated against the
-        password stored in the vault for the service specifiedin the X-Tapis-User header. The secret name is the path
+        password stored in the vault for the site admin specifiedin the X-Tapis-User header. The secret name is the path
         under which the password was stored.
 
         A valid tenant and user must also be specified in the payload.
@@ -3658,7 +3658,7 @@ paths:
         converted to slashes upon receipt, allowing secrets to be arranged in folders.
 
         Only services can make this request.
-      operationId: validateServicePassword
+      operationId: validateSiteAdminPassword
       security:
         - TapisJWT: []
       parameters:
@@ -3671,7 +3671,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReqValidateServicePwd'
+              $ref: '#/components/schemas/ReqValidatePwd'
         required: true
       responses:
         '200':
@@ -4269,7 +4269,7 @@ components:
           items:
             type: integer
             format: int32
-    ReqValidateServicePwd:
+    ReqValidatePwd:
       type: object
       required:
         - tenant
