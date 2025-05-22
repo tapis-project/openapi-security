@@ -3585,8 +3585,8 @@ paths:
         - Vault
       description: |
         Validate a service's password. The JSON payload contains the password that needs to be validated against the
-        password stored in the vault for the service specifiedin the X-Tapis-User header. The secret name is the path
-        under whichthe password was stored.
+        password stored in the vault for the service specifie din the X-Tapis-User header. The secret name is the path
+        under which the password was stored.
 
         A valid tenant and user must also be specified in the payload.
 
@@ -3612,7 +3612,7 @@ paths:
         required: true
       responses:
         '200':
-          description: Secret written.
+          description: Authorized.
           content:
             application/json:
               schema:
@@ -3648,7 +3648,7 @@ paths:
         - Vault
       description: |
         Validate a Site Admin's password. The JSON payload contains the password that needs to be validated against the
-        password stored in the vault for the site admin specifiedin the X-Tapis-User header. The secret name is the path
+        password stored in the vault for the site admin specified in the X-Tapis-User header. The secret name is the path
         under which the password was stored.
 
         A valid tenant and user must also be specified in the payload.
@@ -3675,7 +3675,7 @@ paths:
         required: true
       responses:
         '200':
-          description: Secret written.
+          description: Authorized.
           content:
             application/json:
               schema:
