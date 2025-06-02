@@ -26,7 +26,7 @@ servers:
 tags:
   - name: General
     description: General service health and readiness of the Security Kernel (SK)
-  - name: Roles
+  - name: Role
     description: |
       Manage Tapis roles and permissions. Create, retrieve, update, etc. A role contains zero or more permissions
       and can be granted to or revoked from individual users in a tenant.
@@ -54,9 +54,9 @@ tags:
       The site administrator users are not connected with an identity provider (IdP). 
       
       Supported role types are: USER, USER_DEFAULT, TENANT_ADMIN, RESTRICTED_SVC and SITE_ADMIN.
-  - name: Users
+  - name: User
     description: Manage roles and permissions for users. Grant, revoke, retrieve, etc.
-  - name: Sharing
+  - name: Share
     description: |
       In addition to fine grained permissions support, some Tapis services also support a higher level
       approach to granting access. This approach is known simply as *sharing*. Sharing allows a resource
@@ -164,7 +164,7 @@ paths:
   /security/role/addChild:
     post:
       tags:
-        - Roles
+        - Role
       description: |
         Add a child role to another role using a request body. If the child already exists, then the request has no
         effect and the change count returned is zero. Otherwise, the child is added and the change count is one.
@@ -215,7 +215,7 @@ paths:
   /security/role/addPerm:
     post:
       tags:
-        - Roles
+        - Role
       description: |
         Add a permission to an existing role using a request body. If the permission already exists, then the request has
         no effect and the change count returned is zero. Otherwise, the permission is added and the change count is one.
@@ -317,7 +317,7 @@ paths:
   /security/role:
     get:
       tags:
-        - Roles
+        - Role
       description: |
         Get the names of all roles in the tenant in alphabetic order. Future enhancements will include search filtering.
 
@@ -335,6 +335,7 @@ paths:
           in: query
           schema:
             $ref: '#/components/schemas/RoleTypeEnum'
+            default: 'USER'
       responses:
         '200':
           description: List of role names returned.
@@ -362,7 +363,7 @@ paths:
                 $ref: '#/components/schemas/RespBasic'
     post:
       tags:
-        - Roles
+        - Role
       description: |
         Create a role using a request body. Role names are case sensitive, alpha-numeric strings that can also contain
         underscores. Role names must start with an alphbetic character and can be no more than 58 characters in length.
@@ -413,7 +414,7 @@ paths:
   /security/role/{roleName}:
     get:
       tags:
-        - Roles
+        - Role
       description: |
         Get the named role's definition. A valid tenant must be specified as a query parameter. This request is
         authorized if the requestor is a user that has access to the specified tenant or if the requestor is a service.
@@ -467,7 +468,7 @@ paths:
                 $ref: '#/components/schemas/RespBasic'
     delete:
       tags:
-        - Roles
+        - Role
       description: |
         Delete the named role. A valid tenant and user must be specified as query parameters.
 
@@ -519,7 +520,7 @@ paths:
   /security/role/defaultRole/{user}:
     get:
       tags:
-        - Roles
+        - Role
       description: |
         Get a user's default role. The default role is implicitly created by the system when needed if it doesn't 
         already exist. No authorization required.
@@ -563,7 +564,7 @@ paths:
   /security/role/{roleName}/perms:
     get:
       tags:
-        - Roles
+        - Role
       description: |
         Get the named role's permissions. By default, all permissions assigned to the role, whether directly and
         transitively through child roles, are returned. Set the immediate query parameter to only retrieve permissions
@@ -623,7 +624,7 @@ paths:
   /security/role/previewPathPrefix:
     post:
       tags:
-        - Roles
+        - Role
       description: |
         This read-only endpoint previews the transformations that would take place if the same input was used on a 
         replacePathPrefix POST call. This call is also implemented as a POST so that the same input as used on
@@ -694,7 +695,7 @@ paths:
   /security/role/removeChild:
     post:
       tags:
-        - Roles
+        - Role
       description: |
         Remove a child role from a parent role using a request body. A valid tenant and user must be specified in the
         request body. Supported only for roles of type *USER*.
@@ -744,7 +745,7 @@ paths:
   /security/role/removePathPermFromAllRoles:
     post:
       tags:
-        - Roles
+        - Role
       description: |
         Remove an extended permission from all roles in a tenant using a request body. The tenant and permission must be
         specified in the request body.
@@ -805,7 +806,7 @@ paths:
   /security/role/removePermFromAllRoles:
     post:
       tags:
-        - Roles
+        - Role
       description: |
         Remove a permission from all roles in a tenant using a request body. The tenant and permission must be specified
         in the request body.
@@ -855,7 +856,7 @@ paths:
   /security/role/removePerm:
     post:
       tags:
-        - Roles
+        - Role
       description: |
         Remove a permission from a role using a request body. A valid role, roleTenant and permission must be specified
         in the request body.
@@ -906,7 +907,7 @@ paths:
   /security/role/replacePathPrefix:
     post:
       tags:
-        - Roles
+        - Role
       description: |
         Replace the text in a permission specification when its last component defines an *extended path attribute*.
         Extended path attributes enhance the standard Shiro matching algorithm with one that treats designated components
@@ -987,7 +988,7 @@ paths:
   /security/role/updateDesc/{roleName}:
     post:
       tags:
-        - Roles
+        - Role
       description: |
         Update an existing role's decription using a request body. The size limit on a description is 2048 characters.
 
@@ -1041,7 +1042,7 @@ paths:
   /security/role/updateName/{roleName}:
     post:
       tags:
-        - Roles
+        - Role
       description: |
         Update an existing role's name using a request body. Role names are case sensitive, alphanumeric strings that
         can contain underscores but must begin with an alphabetic character. The limit on role name is 58 characters.
@@ -1096,7 +1097,7 @@ paths:
   /security/role/updateOwner/{roleName}:
     post:
       tags:
-        - Roles
+        - Role
       description: |
         Update an existing role's owner using a request body. Required parameters in the payload are the *roleTenant*,
         which is the tenant of named role, and *newOwner*, which is the user to which role ownership is being transferred.
@@ -1155,7 +1156,7 @@ paths:
   /security/share:
     get:
       tags:
-        - Sharing
+        - Share
       description: |
         Get a filtered list of shared resources. Query parameters are used to restrict the returned shares.
         The *grantor*, *grantee*, *tenant*, *resourceType*, *resourceId1*, *resourceId2*, *privilege*, *createdBy* and
@@ -1270,7 +1271,7 @@ paths:
                 $ref: '#/components/schemas/RespBasic'
     post:
       tags:
-        - Sharing
+        - Share
       description: |
         Share a Tapis resource using a request body. Shared resources allow services to indicate that other services
         should relax their Tapis authorization checking in certain, well-defined contexts.
@@ -1333,7 +1334,7 @@ paths:
                 $ref: '#/components/schemas/RespBasic'
     delete:
       tags:
-        - Sharing
+        - Share
       description: |
         Delete a single shared resource by unique attribute selection. The *grantor*, *grantee*, *tenant*, *resourceType*,
         *resourceId1* and *privilege* parameters are mandatory; *resourceId2* is optional and assumed to be NULL if not provided.
@@ -1412,7 +1413,7 @@ paths:
   /security/share/{id}:
     get:
       tags:
-        - Sharing
+        - Share
       description: |
         Get a shared resource by ID. The shared resource is deleted only if it's in the tenant specified in the required
         *tenant* query parameter.
@@ -1466,7 +1467,7 @@ paths:
                 $ref: '#/components/schemas/RespBasic'
     delete:
       tags:
-        - Sharing
+        - Share
       description: |
         Delete a shared resource by ID. The shared resource is deleted only if it's in the tenant specified in the required
         *tenant* query parameter. The calling service must also be the same as the orginal service that created the share.
@@ -1518,7 +1519,7 @@ paths:
   /security/share/hasPrivilege:
     get:
       tags:
-        - Sharing
+        - Share
       description: |
         Determine if a user has been granted a specific privilege on a specific resource. The *grantee*, *tenant*,
         *resourceType*, *resourceId1* and *privilege* parameters are mandatory; *resourceId2* is optional and assumed to
@@ -1607,7 +1608,7 @@ paths:
   /security/user/admins/{tenant}:
     get:
       tags:
-        - Users
+        - User
       description: |
         Get all users assigned the tenant administrator role ($!tenant_admin).
 
@@ -1655,7 +1656,7 @@ paths:
   /security/user/defaultRole/{user}:
     get:
       tags:
-        - Users
+        - User
       description: |
         Get a user's default role. The default role is implicitly created by the system when needed if it doesn't already exist.
         No authorization required.
@@ -1699,7 +1700,7 @@ paths:
   /security/user:
     get:
       tags:
-        - Users
+        - User
       description: |
         Get the names of all users in the tenant that have been granted a role or permission.
 
@@ -1740,7 +1741,7 @@ paths:
   /security/user/perms/{user}:
     get:
       tags:
-        - Users
+        - User
       description: |
         Get the permissions assigned to a user in a tenant, including those assigned transively. The result list can be
         optionally filtered by the one or both of the query parameters: implies and impliedBy.
@@ -1825,7 +1826,7 @@ paths:
   /security/user/roles/{user}:
     get:
       tags:
-        - Users
+        - User
       description: |
         Get the roles assigned to a user in the specified tenant, including those assigned transively.
 
@@ -1871,7 +1872,7 @@ paths:
   /security/user/withPermission/{permSpec}:
     get:
       tags:
-        - Users
+        - User
       description: |
         Get all users in a tenant assigned a permission. The permSpec parameter is a permission specification that uses
         colons as separators, the asterisk as a wildcard character and commas to define lists. Here are examples of
@@ -1931,7 +1932,7 @@ paths:
   /security/user/withRole/{roleName}:
     get:
       tags:
-        - Users
+        - User
       description: |
         Get all users assigned a role. The role must exist in the tenant.
 
@@ -1987,7 +1988,7 @@ paths:
   /security/user/grantRole:
     post:
       tags:
-        - Users
+        - User
       description: |
         Grant a user the specified role. A valid tenant and user must be specified in the request body. The type of
         role to grant may be specified in the request body. Allowed types are USER, TENANT_ADMIN and
@@ -2041,7 +2042,7 @@ paths:
   /security/user/grantRoleWithPerm:
     post:
       tags:
-        - Users
+        - User
       description: |
         Grant a user the specified role containing the specified permission. This compound request first adds the
         permission to the role if it is not already a member of the role and then assigns the role to the user. The
@@ -2095,7 +2096,7 @@ paths:
   /security/user/grantUserPermission:
     post:
       tags:
-        - Users
+        - User
       description: |
         Grant a user the specified permission by assigning that permission to to the user's default role. If the user's
         default role does not exist it will be created.
@@ -2142,7 +2143,7 @@ paths:
   /security/user/hasRole:
     post:
       tags:
-        - Users
+        - User
       description: |
         Check whether a user in a tenant has been assigned the specified role, either directly or transitively.
 
@@ -2184,7 +2185,7 @@ paths:
   /security/user/hasRoleAll:
     post:
       tags:
-        - Users
+        - User
       description: |
         Check whether a user in a tenant has been assigned all of the roles specified in the request body.
 
@@ -2226,7 +2227,7 @@ paths:
   /security/user/hasRoleAny:
     post:
       tags:
-        - Users
+        - User
       description: |
         Check whether a user in a tenant has been assigned any of the roles specified in the request body.
 
@@ -2268,7 +2269,7 @@ paths:
   /security/user/isAdmin:
     post:
       tags:
-        - Users
+        - User
       description: |
         Check whether a user in a tenant has been assigned the tenant administrator role, either directly or transitively.
 
@@ -2310,7 +2311,7 @@ paths:
   /security/user/isPermitted:
     post:
       tags:
-        - Users
+        - User
       description: |
         Check whether specified permission matches a permission assigned to the user, either directly or transitively.
 
@@ -2352,7 +2353,7 @@ paths:
   /security/user/isPermittedAll:
     post:
       tags:
-        - Users
+        - User
       description: |
         Check whether a user's permissions satisfy all of the permission specifications contained in the request body.
 
@@ -2394,7 +2395,7 @@ paths:
   /security/user/isPermittedAny:
     post:
       tags:
-        - Users
+        - User
       description: |
         Check whether a user's permissions satisfy any of the permission specifications contained in the request body.
 
@@ -2436,7 +2437,7 @@ paths:
   /security/user/revokeUserPermission:
     post:
       tags:
-        - Users
+        - User
       description: |
         Revoke the specified permission from the user's default role. A user's default role is constructed by prepending
         '$$' to the user's name. Default roles are created on demand. If the role does not exist when this method is
@@ -2483,7 +2484,7 @@ paths:
   /security/user/revokeRole:
     post:
       tags:
-        - Users
+        - User
       description: |
         Revoke a previously granted role from a user. No action is taken if the user is not currently assigned the role.
         This request is idempotent.  The type of role to grant may be specified in the request body.
