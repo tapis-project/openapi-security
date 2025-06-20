@@ -561,7 +561,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-XXXXX
+
   /security/role/{roleName}/permits:
     post:
       tags:
@@ -573,6 +573,17 @@ XXXXX
       operationId: rolePermits
       security:
         - TapisJWT: []
+      parameters:
+        - name: immediate
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: roleName
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RoleNameString'
       requestBody:
         content:
           application/json:
@@ -586,7 +597,6 @@ XXXXX
             application/json:
               schema:
                 $ref: '#/components/schemas/RespAuthorized'
-                $ref: '#/components/schemas/RespChangeCount'
         '400':
           description: Input error.
           content:
@@ -4081,14 +4091,15 @@ components:
       type: object
       required:
         - roleTenant
+        - roleType
         - permSpec
       properties:
         roleTenant:
           type: string
+        roleType:
+          $ref: '#/components/schemas/RoleTypeEnum'
         permSpec:
           type: string
-        immediate:
-          type: boolean
     ReqUpdateRoleDescription:
       type: object
       required:
