@@ -561,6 +561,56 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
+XXXXX
+  /security/role/{roleName}/permits:
+    post:
+      tags:
+        - Role
+      description: |
+        Check to see if the specified role allows the specified permission.
+
+        Any authenticated user may make this request.  
+      operationId: rolePermits
+      security:
+        - TapisJWT: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqRolePermits'
+        required: true
+      responses:
+        '200':
+          description: Check completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespAuthorized'
+                $ref: '#/components/schemas/RespChangeCount'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '404':
+          description: Named role not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespName'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
   /security/role/{roleName}/perms:
     get:
       tags:
@@ -4027,6 +4077,18 @@ components:
           type: string
         newPrefix:
           type: string
+    ReqRolePermits:
+      type: object
+      required:
+        - roleTenant
+        - permSpec
+      properties:
+        roleTenant:
+          type: string
+        permSpec:
+          type: string
+        immediate:
+          type: boolean
     ReqUpdateRoleDescription:
       type: object
       required:
